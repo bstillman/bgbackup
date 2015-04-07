@@ -57,15 +57,18 @@ datadir = /path/to/datadir
 innodb_data_home_dir = /path/to/innodb_data_home_dir
 ```
 
-Lock down permissions on config file  <br />
+Lock down permissions on config file(s)  <br />
 ```
 chown mysql /etc/my.cnf
 chmod 600 /etc/my.cnf
 ```
-OR <br />
 ```
 chown mysql /etc/my.cnf.d/xtrabackup.cnf
 chmod 600 /etc/my.cnf.d/xtrabackup.cnf
+```
+```
+chown mysql /etc/my.cnf.d/server.cnf
+chmod 600 /etc/my.cnf.d/server.cnf
 ```
 
 Todo: 
