@@ -67,7 +67,7 @@ function full_backup {
 	log_info "Full backup" $log_status
 	log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 	butype=full
-	budir="$(ls "$backupbasedir" | grep "$budirdate" | tail -1)"
+	files=("$backupbasedir"/"$budirdate"*); budir=${files[${#files[@]} -1 ]}
 	bulocation=$backupbasedir/$budir
 	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$bulocation"/xtrabackup_checkpoints.xbcrypt > "$bulocation"/xtrabackup_checkpoints
 	backup_cleanup
@@ -84,7 +84,7 @@ function incremental_backup {
 	log_info "Incremental backup" $log_status 
 	log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 	butype=incremental
-	budir="$(ls "$backupbasedir" | grep "$budirdate" | tail -1)"
+	files=("$backupbasedir"/"$budirdate"*); budir=${files[${#files[@]} -1 ]}
 	bulocation=$backupbasedir/$budir
 	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$bulocation"/xtrabackup_checkpoints.xbcrypt > "$bulocation"/xtrabackup_checkpoints
 	backup_cleanup
