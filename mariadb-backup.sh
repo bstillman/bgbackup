@@ -3,16 +3,16 @@
 ############################################
 # Config
 
-FULLBACKDAY=Tuesday
-KEEPWEEK=4	                          # Number of weeks worth of backups to keep
-BACKUPDIR=/backups	                  #Full path to backup directory root
-LOGPATH=/var/log                      # Path to keep logs
-CRYPTKEY=/etc/my.cnf.d/xtrabackup.key	# Full path to encryption key
-THREADS=4                             # Used for parallel and compress
-ENCRYPT=yes                           # To be used later
-COMPRESS=yes                          # To be used later
-MAILLIST=ben@mariadb.com              # Comma separated list of email address to be notified.
-MAILSUBPRE=[dbhc-mariadb]             # Email subject prefix
+FULLBACKDAY=Tuesday				# Day of week to do full backup
+KEEPWEEK=4					# Number of weeks worth of backups to keep
+BACKUPDIR=/backups				# Full path to backup directory root
+LOGPATH=/var/log                      		# Path to keep logs
+CRYPTKEY=/etc/my.cnf.d/backupscript.key		# Full path to encryption key
+THREADS=4					# Used for parallel and compress
+ENCRYPT=yes					# To be used later
+COMPRESS=yes					# To be used later
+MAILLIST=ben@mariadb.com			# Comma separated list of email address to be notified.
+MAILSUBPRE=[dbhc-mariadb			# Email subject prefix
 
 ############################################
 # Functions
