@@ -78,7 +78,7 @@ function full_backup {
 function incremental_backup {	
 	log_info "Incremental backup beginning."
 	budirdate=$(date +%Y-%m-%d)
-	incrbase=$backupbasedir/$(ls -tr "$backupbasedir" | tail -1)
+	incrbase=$backupbasedir/$(ls -tr "$backupbasedir" | tail -1) # Needs to not use ls
 	$innobackupex --galera-info --parallel=$threads --compress --compress-threads=$threads --encrypt=AES256 --encrypt-key-file=$cryptkey --incremental "$backupbasedir" --incremental-basedir="$incrbase" 2>> "$logfile"
 	log_check
 	log_info "Incremental backup" $log_status 
@@ -95,7 +95,7 @@ function incremental_backup {
 function backup_cleanup {
 	if [ $log_status = SUCCEEDED ] ; then
 		tailnum=$(($keepweek+1))
-		declare -a TO_DELETE=($(ls -ar "$backupdir" | grep weekof | tail -n +"$tailnum"))
+		declare -a TO_DELETE=($(ls -ar "$backupdir" | grep weekof | tail -n +"$tailnum"))	# Needs to not use ls
 		if [ ${#TO_DELETE[@]} -gt 1 ] ; then
 			log_info "Beginning cleanup of old weekly backup directories."
 			for d in "${TO_DELETE[@]}"
