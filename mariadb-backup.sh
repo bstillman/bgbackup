@@ -12,7 +12,7 @@ threads=4					# Used for parallel and compress
 encrypt=yes					# To be used later
 compress=yes					# To be used later
 maillist=ben@mariadb.com			# Comma separated list of email address to be notified.
-mailsubpre=[dbhc-mariadb			# Email subject prefix
+mailsubpre=[dbhc-mariadb]			# Email subject prefix
 
 ############################################
 # Functions
