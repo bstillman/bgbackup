@@ -19,7 +19,7 @@ mailsubpre="[dbhc-mariadb]"			# Email subject prefix
 
 # Mail function
 function mail_log {
-	mail -s "$mailsubpre $HOSTNAME Backup $log_status $MDATE" $maillist < "$logfile"
+	mail -s "$mailsubpre $HOSTNAME Backup $log_status $mdate" $maillist < "$logfile"
 	insert_db_stats
 }
 
@@ -37,13 +37,13 @@ function backer_upper {
 	if [ "$(date +%A)" = $fullbackday ] && [ ! -d $backupdir/weekof"$(date +%m%d%y)" ]; then
 		log_info "Creating backup base directory."
 		mkdir -p $backupdir/weekof"$(date +%m%d%y)"
-		BACKUPBASEDIR=$backupdir/weekof"$(date +%m%d%y)"
+		backupbasedir=$backupdir/weekof"$(date +%m%d%y)"
 		full_backup
 	elif [ "$(date +%A)" = $fullbackday ] && [ -d $backupdir/weekof"$(date +%m%d%y)" ] ; then
 		log_info "It is the day scheduled for full backups, but the weekly folder"
 		log_info "already exists. Assuming incremental backup. Check config." 
 		log_info "Setting backup base directory variable." 
-		BACKUPBASEDIR=$backupdir/weekof"$(date +%m%d%y)"
+		backupbasedir=$backupdir/weekof"$(date +%m%d%y)"
 		incremental_backup
 	elif [ "$(date +%A)" != $fullbackday ] && [ ! -d $backupdir/weekof"$(date +%m%d%y)" ] ; then
 		log_info "It is an incremental backup day, however the weekly folder does"
@@ -53,7 +53,7 @@ function backer_upper {
 		exit
 	else
 		log_info "Setting backup base directory variable."
-		BACKUPBASEDIR=$backupdir/weekof"$(date -dlast-$fullbackday +%m%d%y)"
+		backupbasedir=$backupdir/weekof"$(date -dlast-$fullbackday +%m%d%y)"
 		incremental_backup
 	fi
 }
@@ -62,13 +62,13 @@ function backer_upper {
 function full_backup {	
 	log_info "Full backup beginning."
 	budirdate=$(date +%Y-%m-%d)
-	$INNOBACKUPEX --galera-info --parallel=$threads --compress --compress-threads=$threads --encrypt=AES256 --encrypt-key-file=$cryptkey "$BACKUPBASEDIR" 2>> "$logfile"
+	$innobackupex --galera-info --parallel=$threads --compress --compress-threads=$threads --encrypt=AES256 --encrypt-key-file=$cryptkey "$backupbasedir" 2>> "$logfile"
 	log_check
 	log_info "Full backup" $log_status
 	log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 	butype=full
-	budir="$(ls "$BACKUPBASEDIR" | grep "$budirdate" | tail -1)"
-	bulocation=$BACKUPBASEDIR/$budir
+	budir="$(ls "$backupbasedir" | grep "$budirdate" | tail -1)"
+	bulocation=$backupbasedir/$budir
 	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$bulocation"/xtrabackup_checkpoints.xbcrypt > "$bulocation"/xtrabackup_checkpoints
 	backup_cleanup
 	mail_log
@@ -78,14 +78,14 @@ function full_backup {
 function incremental_backup {	
 	log_info "Incremental backup beginning."
 	budirdate=$(date +%Y-%m-%d)
-	INCRBASE=$BACKUPBASEDIR/$(ls -tr "$BACKUPBASEDIR" | tail -1)
-	$INNOBACKUPEX --galera-info --parallel=$threads --compress --compress-threads=$threads --encrypt=AES256 --encrypt-key-file=$cryptkey --incremental "$BACKUPBASEDIR" --incremental-basedir="$INCRBASE" 2>> "$logfile"
+	incrbase=$backupbasedir/$(ls -tr "$backupbasedir" | tail -1)
+	$innobackupex --galera-info --parallel=$threads --compress --compress-threads=$threads --encrypt=AES256 --encrypt-key-file=$cryptkey --incremental "$backupbasedir" --incremental-basedir="$incrbase" 2>> "$logfile"
 	log_check
 	log_info "Incremental backup" $log_status 
 	log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 	butype=incremental
-	budir="$(ls "$BACKUPBASEDIR" | grep "$budirdate" | tail -1)"
-	bulocation=$BACKUPBASEDIR/$budir
+	budir="$(ls "$backupbasedir" | grep "$budirdate" | tail -1)"
+	bulocation=$backupbasedir/$budir
 	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$bulocation"/xtrabackup_checkpoints.xbcrypt > "$bulocation"/xtrabackup_checkpoints
 	backup_cleanup
 	mail_log
@@ -94,8 +94,8 @@ function incremental_backup {
 # Function to cleanup old backup directories. This is definitely not the best way. 
 function backup_cleanup {
 	if [ $log_status = SUCCEEDED ] ; then
-		TAILNUM=$(($keepweek+1))
-		declare -a TO_DELETE=($(ls -ar "$backupdir" | grep weekof | tail -n +"$TAILNUM"))
+		tailnum=$(($keepweek+1))
+		declare -a TO_DELETE=($(ls -ar "$backupdir" | grep weekof | tail -n +"$tailnum"))
 		if [ ${#TO_DELETE[@]} -gt 1 ] ; then
 			log_info "Beginning cleanup of old weekly backup directories."
 			for d in "${TO_DELETE[@]}"
@@ -151,7 +151,7 @@ function debugme {
 # Begin script 
 
 # Set some specific variables
-MDATE=$(date +%m/%d/%y)	# Date for mail subject. Not in function so set at script start time, not when backup is finished.
+mdate=$(date +%m/%d/%y)	# Date for mail subject. Not in function so set at script start time, not when backup is finished.
 logfile=$logpath/mariadb_backup_$(date +%Y-%m-%d-%T).log	# logfile
 created_date=$(date +'%F')
 start_time=$(date +'%T')
@@ -163,7 +163,7 @@ log_info "Backup of" "$(hostname)" "beginning."
 
 # Check for xtrabackup
 if command -v innobackupex >/dev/null; then
-    INNOBACKUPEX=$(command -v innobackupex)
+    innobackupex=$(command -v innobackupex)
 else
    log_info "xtrabackup/innobackupex does not appear to be installed. Please install and try again."
    log_status=FAILED
