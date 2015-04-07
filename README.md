@@ -12,6 +12,7 @@ Send output to key file like: <br />
 echo -n "openssl_output_here" > /etc/my.cnf.d/xtrabackup.key <br />
 
 Create table for backup logging.  <br />
+```
 CREATE DATABASE backupmon; <br />
 CREATE TABLE backupmon.backups ( <br />
 	id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, <br />
@@ -29,6 +30,7 @@ CREATE TABLE backupmon.backups ( <br />
 	mailed_to VARCHAR(255), <br />
 	log_file VARCHAR(255) <br />
 	); <br />
+```
 
 Grant these permissions to the backup user  <br />
 GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'backup_user'@'localhost' IDENTIFIED BY 'backup_password'; <br />
