@@ -7,9 +7,9 @@ The backups are done with xtrabackup/innobackupex. Backups are compressed (qpres
 Details about each backup are emailed to all email addresses listed in MAILLIST and also logged in the database (backupmon.backups) for easier monitoring in MONyog. 
 
 Use the following to create the encryption key file: 
-openssl rand -base64 24 <br />
-Send output to key file like: <br />
-echo -n "openssl_output_here" > /etc/my.cnf.d/xtrabackup.key <br />
+```
+openssl rand -base64 24 -out /etc/my.cnf.d/backupscript.key
+```
 
 Create table for backup logging.  <br />
 ```
