@@ -3,7 +3,7 @@
 ############################################
 # Config
 
-fullbackday=Tuesday				# Day of week to do full backup
+fullbackday=Wednesday				# Day of week to do full backup
 keepweek=4					# Number of weeks worth of backups to keep
 backupdir=/backups				# Full path to backup directory root
 logpath=/var/log                      		# Path to keep logs
@@ -41,8 +41,8 @@ function backer_upper {
 		full_backup
 	elif [ "$(date +%A)" = $fullbackday ] && [ -d $backupdir/weekof"$(date +%m%d%y)" ] ; then
 		log_info "It is the day scheduled for full backups, but the weekly folder"
-		log_info "already exists. Assuming incremental backup. Check config." 
-		log_info "Setting backup base directory variable." 
+		log_info "already exists. Assuming incremental backup. Check config."
+		log_info "Setting backup base directory variable."
 		backupbasedir=$backupdir/weekof"$(date +%m%d%y)"
 		incremental_backup
 	elif [ "$(date +%A)" != $fullbackday ] && [ ! -d $backupdir/weekof"$(date +%m%d%y)" ] ; then
@@ -59,7 +59,7 @@ function backer_upper {
 }
 
 # Full backup function
-function full_backup {	
+function full_backup {
 	log_info "Full backup beginning."
 	budirdate=$(date +%Y-%m-%d)
 	$innobackupex --galera-info --parallel=$threads --compress --compress-threads=$threads --encrypt=AES256 --encrypt-key-file=$cryptkey "$backupbasedir" 2>> "$logfile"
@@ -68,34 +68,32 @@ function full_backup {
 	log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 	butype=full
 	files=("$backupbasedir"/"$budirdate"*); budir=${files[${#files[@]} -1 ]}
-	bulocation=$backupbasedir/$budir
-	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$bulocation"/xtrabackup_checkpoints.xbcrypt > "$bulocation"/xtrabackup_checkpoints
+	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$budir"/xtrabackup_checkpoints.xbcrypt > "$budir"/xtrabackup_checkpoints
 	backup_cleanup
 	mail_log
 }
 
 # Incremental backup function
-function incremental_backup {	
+function incremental_backup {
 	log_info "Incremental backup beginning."
 	budirdate=$(date +%Y-%m-%d)
-	incrbase=$backupbasedir/$(ls -tr "$backupbasedir" | tail -1) # Needs to not use ls
+	incrbase=$backupbasedir/$(ls -tr "$backupbasedir" | tail -1)
 	$innobackupex --galera-info --parallel=$threads --compress --compress-threads=$threads --encrypt=AES256 --encrypt-key-file=$cryptkey --incremental "$backupbasedir" --incremental-basedir="$incrbase" 2>> "$logfile"
 	log_check
-	log_info "Incremental backup" $log_status 
+	log_info "Incremental backup" $log_status
 	log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 	butype=incremental
 	files=("$backupbasedir"/"$budirdate"*); budir=${files[${#files[@]} -1 ]}
-	bulocation=$backupbasedir/$budir
-	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$bulocation"/xtrabackup_checkpoints.xbcrypt > "$bulocation"/xtrabackup_checkpoints
+	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$budir"/xtrabackup_checkpoints.xbcrypt > "$budir"/xtrabackup_checkpoints
 	backup_cleanup
 	mail_log
 }
 
-# Function to cleanup old backup directories. This is definitely not the best way. 
+# Function to cleanup old backup directories. This is definitely not the best way.
 function backup_cleanup {
 	if [ $log_status = SUCCEEDED ] ; then
 		tailnum=$(($keepweek+1))
-		declare -a TO_DELETE=($(ls -ar "$backupdir" | grep weekof | tail -n +"$tailnum"))	# Needs to not use ls
+		declare -a TO_DELETE=($(ls -ar "$backupdir" | grep weekof | tail -n +"$tailnum"))
 		if [ ${#TO_DELETE[@]} -gt 1 ] ; then
 			log_info "Beginning cleanup of old weekly backup directories."
 			for d in "${TO_DELETE[@]}"
@@ -117,14 +115,14 @@ function backup_cleanup {
 function insert_db_stats {
 	source_host=$(hostname)
 	end_time=$(date +'%T')
-	backup_size="$(du -sm "$bulocation" | awk '{print $1}')"
+	backup_size="$(du -sm "$budir" | awk '{print $1}')"
 	debugme
-	mysql --defaults-group-suffix=backupmon -e "INSERT INTO backupmon.backups (created_date, start_time, end_time, source_host, location, type, threads, encrypted, compressed, size, status, mailed_to, log_file) VALUES ('$created_date', '$start_time', '$end_time', '$source_host', '$bulocation', '$butype', '$threads', '$encrypt', '$compress', '$backup_size', '$log_status', '$maillist', '$logfile');"	
+	mysql --defaults-group-suffix=backupmon -e "INSERT INTO backupmon.backups (created_date, start_time, end_time, source_host, location, type, threads, encrypted, compressed, size, status, mailed_to, log_file) VALUES ('$created_date', '$start_time', '$end_time', '$source_host', '$budir', '$butype', '$threads', '$encrypt', '$compress', '$backup_size', '$log_status', '$maillist', '$logfile');"
 }
 
 # Logging function
-function log_info() { 
-	printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" >>"$logfile"; 
+function log_info() {
+	printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" >>"$logfile";
 }
 
 
@@ -136,7 +134,6 @@ function debugme {
 	echo "source_host: " "$source_host"
 	echo "budirdate: " "$budirdate"
 	echo "budir: " "$budir"
-	echo "bulocation: " "$bulocation"
 	echo "butype: " "$butype"
 	echo "threads: " "$threads"
 	echo "encrypt: " "$encrypt"
@@ -148,7 +145,7 @@ function debugme {
 }
 
 ############################################
-# Begin script 
+# Begin script
 
 # Set some specific variables
 mdate=$(date +%m/%d/%y)	# Date for mail subject. Not in function so set at script start time, not when backup is finished.
