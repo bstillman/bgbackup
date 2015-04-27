@@ -8,7 +8,11 @@ Details about each backup are emailed to all email addresses listed in MAILLIST 
 
 Use the following to create the encryption key file: 
 ```
-openssl rand -base64 24 -out /etc/my.cnf.d/backupscript.key
+openssl rand -base64 24
+```
+# Send output to key file like:
+```
+echo -n "openssl_output_here" > /etc/my.cnf.d/xtrabackup.key
 ```
 
 Create table for backup logging.  <br />
