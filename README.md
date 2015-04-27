@@ -10,7 +10,7 @@ Use the following to create the encryption key file:
 ```
 openssl rand -base64 24
 ```
-# Send output to key file like:
+Send output to key file like:
 ```
 echo -n "openssl_output_here" > /etc/my.cnf.d/xtrabackup.key
 ```
