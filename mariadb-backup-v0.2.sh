@@ -20,8 +20,8 @@ parallel=yes                             # Use parallel threads for backup?
 encrypt=yes                              # Encrypt backup?
 cryptkey=/etc/my.cnf.d/backupscript.key  # Full path to encryption key
 compress=yes                             # Compress backup?
-galera=yes                               # Is server part of Galera cluster?
-slave=no                                 # Is server a slave? 
+galera=yes                               # Include Galera info?
+slave=no                                 # Include slave info? 
 maillist=ben@mariadb.com                 # Comma separated list of email address to be notified.
 mailsubpre="[dbhc-mariadb]"              # Email subject prefix
 
