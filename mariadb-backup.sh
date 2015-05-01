@@ -34,12 +34,13 @@ function log_info() {
 # Function to create innobackupex command
 function innocreate {
 	mhost=$(hostname)
-	innocommand="$innobackupex $backupdir --history=$mhost"
+	innocommand="$innobackupex"
 	if [ "$(date +%A)" = $fullbackday ] ; then
 		butype=Full
+		innocommand=$innocommand" $backupdir/full-$(date +%Y-%m-%d_%H-%M-%S) --no-timestamp --history=$mhost"
 	else
 		butype=Incremental
-		innocommand=$innocommand" --incremental --incremental-history-name=$mhost"
+		innocommand=$innocommand" $backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S) --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
 	fi
 	[ ! -z "$backupuser" ] && innocommand=$innocommand" --user=$backupuser"
 	[ ! -z "$backuppass" ] && innocommand=$innocommand" --password=$backuppass"
@@ -100,8 +101,24 @@ function backer_upper {
 
 # Function to cleanup old backups.
 function backup_cleanup {
-	#...
-	true
+	if [ $log_status = SUCCEEDED ] ; then
+		firstfulldel=$(find "$backupdir" -name 'full-*' -mtime +"$keepday" | sort -r | head -n 1)
+		deldate=$(stat -c %y "$firstfulldel" | awk '{print $1}')
+		declare -a TO_DELETE=($(find "$backupdir" -maxdepth 1 -name 'full*' -o -name 'incr*' -not -newermt "$deldate"))
+		if [ ${#TO_DELETE[@]} -gt 1 ] ; then
+			log_info "Beginning cleanup of old backups."
+			for d in "${TO_DELETE[@]}"
+			do
+				log_info "Deleted backup $d"
+				rm -Rf "${backupdir}"/"$d"
+			done
+			log_info "Backup cleanup complete."
+		else
+			log_info "No backups to clean."
+		fi
+	else
+		log_info "Backup failed. No old backups deleted at this time."
+	fi
 }
 
 # Debug variables function
