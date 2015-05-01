@@ -1,26 +1,69 @@
 ############################################
+
 # mariadb-backup configuration file
 
-backupuser=testuser                      # MySQL backup username
-backuppass=testpass                      # MySQL backup user password
-monyog=no                                # If server monitored by MONyog, should we disable alerts?
-monyogserver=                            # The name of the server as setup in MONyog
-monyoguser=                              # MONyog username
-monyogpass=                              # MONyog password
-monyoghost=                              # MONyog host/ip
-monyogport=                              # MONyog port
-fullbackday=Friday                       # Day of week to do full backup
-keepday=10                               # Minimum number of days to keep backups
-backupdir=/backups                       # Full path to backup directory root
-logpath=/var/log                         # Path to keep logs
-threads=4                                # Used for parallel and compress
-parallel=yes                             # Use parallel threads for backup?
-encrypt=yes                              # Encrypt backup?
-cryptkey=/etc/my.cnf.d/backupscript.key  # Full path to encryption key
-compress=yes                             # Compress backup?
-galera=no                                # Include Galera info?
-slave=no                                 # Include slave info? 
-maillist=ben@mariadb.com                 # Comma separated list of email address to be notified.
-mailsubpre="[dbhc-mariadb]"              # Email subject prefix
+
+# MySQL backup username
+backupuser=testuser
+
+# MySQL backup user password
+backuppass=testpass
+
+# If server monitored by MONyog, should we disable alerts?                 
+monyog=no
+
+# The name of the server as setup in MONyog
+monyogserver=
+
+# MONyog username
+monyoguser=
+
+# MONyog password
+monyogpass=
+
+# MONyog host/ip                 
+monyoghost=
+
+# MONyog port
+monyogport=
+
+# Day of week to do full backup
+fullbackday=Friday
+
+# Minimum number of days to keep backups
+keepday=10
+
+# Full path to backup directory root
+backupdir=/backups
+
+# Path to keep logs
+logpath=/var/log
+
+# Used for parallel and compress
+threads=4
+
+# Use parallel threads for backup?
+parallel=yes
+
+# Encrypt backup?
+encrypt=yes
+
+# Full path to encryption key
+cryptkey=/etc/my.cnf.d/backupscript.key
+
+# Compress backup?
+compress=yes
+
+# Include Galera info?
+galera=no
+
+# Include slave info? 
+slave=no
+
+# Comma separated list of email address to be notified.
+maillist=ben@mariadb.com,guillaume@mariadb.com
+
+# Email subject prefix
+mailsubpre="[dbhc-mariadb]"
 
 ############################################
