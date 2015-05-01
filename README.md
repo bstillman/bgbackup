@@ -6,6 +6,14 @@ The backups are done with xtrabackup/innobackupex. Backups are compressed (qpres
 
 Details about each backup are emailed to all email addresses listed in MAILLIST and also logged in the database (PERCONA_SCHEMA.xtrabackup_history) for easier monitoring in MONyog. 
 
+Encrypted incremental backups are enabled by decrypting the xtrabackup_checkpoints file. 
+
+Options for inclusion of Galera and slave info.
+
+If Galera option is yes, the script will enable wsrep_desync on the node being backed up. When the backup is finished, it will check for wsrep_local_recv_queue to return to zero before disabling wsrep_desync. 
+
+Option to disable MONyog alerts before, and enable after. 
+
 Use the following to create the encryption key file: 
 ```
 openssl rand -base64 24
