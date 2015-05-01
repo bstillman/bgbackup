@@ -5,13 +5,13 @@
 
 backupuser=testuser                      # MySQL backup username
 backuppass=testpass                      # MySQL backup user password
-monyog=yes                               # If server monitored by MONyog, should we disable alerts?
-monyogserver=db-server-3                 # The name of the server as setup in MONyog
-monyoguser=admin                         # MONyog username
-monyogpass=password                      # MONyog password
-monyoghost=192.168.0.230                 # MONyog host/ip
-monyogport=5555                          # MONyog port
-fullbackday=Wednesday                    # Day of week to do full backup
+monyog=no                                # If server monitored by MONyog, should we disable alerts?
+monyogserver=                            # The name of the server as setup in MONyog
+monyoguser=                              # MONyog username
+monyogpass=                              # MONyog password
+monyoghost=                              # MONyog host/ip
+monyogport=                              # MONyog port
+fullbackday=Friday                       # Day of week to do full backup
 keepweek=4                               # Number of weeks worth of backups to keep
 backupdir=/backups                       # Full path to backup directory root
 logpath=/var/log                         # Path to keep logs
@@ -20,7 +20,7 @@ parallel=yes                             # Use parallel threads for backup?
 encrypt=yes                              # Encrypt backup?
 cryptkey=/etc/my.cnf.d/backupscript.key  # Full path to encryption key
 compress=yes                             # Compress backup?
-galera=yes                               # Include Galera info?
+galera=no                                # Include Galera info?
 slave=no                                 # Include slave info? 
 maillist=ben@mariadb.com                 # Comma separated list of email address to be notified.
 mailsubpre="[dbhc-mariadb]"              # Email subject prefix
@@ -76,6 +76,7 @@ function checkpointsdecrypt {
 
 # Function to do the backup
 function backer_upper {
+	innocreate
 	if [ "$monyog" = yes ] ; then
 		log_info "Disabling MONyog alerts"
 		curl "$monyoghost:$monyogport/?_object=MONyogAPI&_action=Alerts&_value=disable&_user=$monyoguser&_password=$monyogpass&_server=$monyogserver"
@@ -85,7 +86,7 @@ function backer_upper {
 		log_info "Enabling WSREP desync."
 		mysql -u $backupuser -p $backuppass -e "SET GLOBAL wsrep_desync=ON;"
 	fi
-	log_info "Beginning $butype Backup"
+	log_info "Beginning ${butype} Backup"
 	$innocommand 2>> "$logfile"
 	if [ "$encrypt" = yes ] ; then 
 		checkpointsdecrypt
@@ -144,6 +145,8 @@ function debugme {
 	echo "butype: " "$butype"
 	echo "log_status: " "$log_status"
 	echo "budirdate: " "$budirdate"	
+	echo "innocommand: " "$innocommand"
+	echo "mhost: " "$mhost"
 }
 
 ############################################
