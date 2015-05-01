@@ -14,7 +14,7 @@ fi
 
 # Mail function
 function mail_log {
-	mail -s "$mailsubpre $HOSTNAME Backup $log_status $mdate" $maillist < "$logfile"
+	mail -s "$mailsubpre $HOSTNAME Backup $log_status $mdate" "$maillist" < "$logfile"
 }
 
 # Function to check log for okay
@@ -35,7 +35,7 @@ function log_info() {
 function innocreate {
 	mhost=$(hostname)
 	innocommand="$innobackupex"
-	if [ "$(date +%A)" = $fullbackday ] ; then
+	if [ "$(date +%A)" = "$fullbackday" ] ; then
 		butype=Full
 		innocommand=$innocommand" $backupdir/full-$(date +%Y-%m-%d_%H-%M-%S) --no-timestamp --history=$mhost"
 	else
@@ -55,7 +55,7 @@ function innocreate {
 function checkpointsdecrypt {
 	budirdate=$(date +%Y-%m-%d)
 	files=("$backupdir"/"$budirdate"*); budir=${files[${#files[@]} -1 ]}
-	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$budir"/xtrabackup_checkpoints.xbcrypt > "$budir"/xtrabackup_checkpoints
+	xbcrypt -d --encrypt-key-file="$cryptkey" --encrypt-algo=AES256 < "$budir"/xtrabackup_checkpoints.xbcrypt > "$budir"/xtrabackup_checkpoints
 }
 
 # Function to disable/enable MONyog alerts
@@ -73,7 +73,7 @@ function backer_upper {
 	fi
 	if [ "$galera" = yes ] ; then
 		log_info "Enabling WSREP desync."
-		mysql -u $backupuser -p $backuppass -e "SET GLOBAL wsrep_desync=ON;"
+		mysql -u "$backupuser" -p "$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
 	fi
 	log_info "Beginning ${butype} Backup"
 	$innocommand 2>> "$logfile"
@@ -84,10 +84,10 @@ function backer_upper {
 	if [ "$galera" = yes ] ; then
 		log_info "Disabling WSREP desync."
 		until [ "$queue" -eq 0 ]; do
-    		queue=$(mysql -u $backupuser -p $backuppass -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
+    		queue=$(mysql -u "$backupuser" -p "$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
     		sleep 10
 		done
-		mysql -u $backupuser -p $backuppass -e "SET GLOBAL wsrep_desync=OFF;"
+		mysql -u "$backupuser" -p "$backuppass" -e "SET GLOBAL wsrep_desync=OFF;"
 	fi
 	if [ "$monyog" = yes ] ; then
 		log_info "Enabling MONyog alerts"
@@ -110,7 +110,7 @@ function backup_cleanup {
 			for d in "${TO_DELETE[@]}"
 			do
 				log_info "Deleted backup $d"
-				rm -Rf "${backupdir}"/"$d"
+				rm -Rf "${backupdir:?}"/"$d"
 			done
 			log_info "Backup cleanup complete."
 		else
