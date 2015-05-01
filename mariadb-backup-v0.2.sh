@@ -76,7 +76,7 @@ function checkpointsdecrypt {
 
 # Function to do the backup
 function backer_upper {
-	if [ ! -z "$monyoghost" ] ; then
+	if [ "$monyog" = yes ] ; then
 		log_info "Disabling MONyog alerts"
 		curl "$monyoghost:$monyogport/?_object=MONyogAPI&_action=Alerts&_value=disable&_user=$monyoguser&_password=$monyogpass&_server=$monyogserver"
 		sleep 30
@@ -99,7 +99,7 @@ function backer_upper {
 		done
 		mysql -u $backupuser -p $backuppass -e "SET GLOBAL wsrep_desync=OFF;"
 	fi
-	if [ ! -z "$monyoghost" ] ; then
+	if [ "$monyog" = yes ] ; then
 		log_info "Disabling MONyog alerts"
 		curl "${monyoghost}:${monyogport}/?_object=MONyogAPI&_action=Alerts&_value=enable&_user=${monyoguser}&_password=${monyogpass}&_server=${monyogserver}"
 		sleep 30
