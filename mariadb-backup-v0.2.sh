@@ -147,6 +147,7 @@ function debugme {
 	echo "budirdate: " "$budirdate"	
 	echo "innocommand: " "$innocommand"
 	echo "mhost: " "$mhost"
+	echo "budir: " "$budir"
 }
 
 ############################################
