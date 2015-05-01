@@ -74,12 +74,17 @@ function checkpointsdecrypt {
 	xbcrypt -d --encrypt-key-file=$cryptkey --encrypt-algo=AES256 < "$budir"/xtrabackup_checkpoints.xbcrypt > "$budir"/xtrabackup_checkpoints
 }
 
+# Function to disable/enable MONyog alerts
+function monyog {
+	curl "${monyoghost}:${monyogport}/?_object=MONyogAPI&_action=Alerts&_value=${1}&_user=${monyoguser}&_password=${monyogpass}&_server=${monyogserver}"
+}
+
 # Function to do the backup
 function backer_upper {
 	innocreate
 	if [ "$monyog" = yes ] ; then
 		log_info "Disabling MONyog alerts"
-		curl "$monyoghost:$monyogport/?_object=MONyogAPI&_action=Alerts&_value=disable&_user=$monyoguser&_password=$monyogpass&_server=$monyogserver"
+		monyog disable
 		sleep 30
 	fi
 	if [ "$galera" = yes ] ; then
@@ -101,8 +106,8 @@ function backer_upper {
 		mysql -u $backupuser -p $backuppass -e "SET GLOBAL wsrep_desync=OFF;"
 	fi
 	if [ "$monyog" = yes ] ; then
-		log_info "Disabling MONyog alerts"
-		curl "${monyoghost}:${monyogport}/?_object=MONyogAPI&_action=Alerts&_value=enable&_user=${monyoguser}&_password=${monyogpass}&_server=${monyogserver}"
+		log_info "Enabling MONyog alerts"
+		monyog enable
 		sleep 30
 	fi
 	log_check
