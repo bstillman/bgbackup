@@ -76,12 +76,12 @@ function backer_upper {
 	fi
 	log_info "Beginning ${butype} Backup"
 	$innocommand 2>> "$logfile"
-	if [ "$encrypt" = yes ] ; then 
+	log_check
+	if [ "$encrypt" = yes ] && [ "$log_status" = "SUCCEEDED" ] ; then 
 		checkpointsdecrypt
 	fi
 	if [ "$galera" = yes ] ; then
 		log_info "Disabling WSREP desync."
-		# wsrep_local_recv_queue
 		until [ "$queue" -eq 0 ]; do
     		queue=$(mysql -u $backupuser -p $backuppass -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
     		sleep 10
@@ -93,7 +93,7 @@ function backer_upper {
 		monyog enable
 		sleep 30
 	fi
-	log_check
+	
 	log_info "$butype backup $log_status"
 	log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 }
