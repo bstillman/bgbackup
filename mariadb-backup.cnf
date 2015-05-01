@@ -24,31 +24,3 @@ maillist=ben@mariadb.com                 # Comma separated list of email address
 mailsubpre="[dbhc-mariadb]"              # Email subject prefix
 
 ############################################
-
-############################################
-# Config
-
-backupuser=testuser                      # MySQL backup username
-backuppass=testpass                      # MySQL backup user password
-monyog=no                                # If server monitored by MONyog, should we disable alerts?
-monyogserver=                            # The name of the server as setup in MONyog
-monyoguser=                              # MONyog username
-monyogpass=                              # MONyog password
-monyoghost=                              # MONyog host/ip
-monyogport=                              # MONyog port
-fullbackday=Friday                       # Day of week to do full backup
-keepweek=4                               # Number of weeks worth of backups to keep
-backupdir=/backups                       # Full path to backup directory root
-logpath=/var/log                         # Path to keep logs
-threads=4                                # Used for parallel and compress
-parallel=yes                             # Use parallel threads for backup?
-encrypt=yes                              # Encrypt backup?
-cryptkey=/etc/my.cnf.d/backupscript.key  # Full path to encryption key
-compress=yes                             # Compress backup?
-galera=no                                # Include Galera info?
-slave=no                                 # Include slave info? 
-maillist=ben@mariadb.com                 # Comma separated list of email address to be notified.
-mailsubpre="[dbhc-mariadb]"              # Email subject prefix
-
-############################################
-
