@@ -132,7 +132,7 @@ function debugme {
 	echo "monyoghost: " "$monyoghost"
 	echo "monyogport: " "$monyogport"
 	echo "fullbackday: " "$fullbackday"
-	echo "keepweek: " "$keepweek"
+	echo "keepday: " "$keepday"
 	echo "backupdir: " "$backupdir"
 	echo "logpath: " "$logpath"
 	echo "threads: " "$threads"
