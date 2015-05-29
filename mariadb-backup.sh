@@ -44,6 +44,8 @@ function innocreate {
 	fi
 	[ ! -z "$backupuser" ] && innocommand=$innocommand" --user=$backupuser"
 	[ ! -z "$backuppass" ] && innocommand=$innocommand" --password=$backuppass"
+        [ ! -z "$host" ] && innocommand=$innocommand" --host=$host"
+        [ ! -z "$hostport" ] && innocommand=$innocommand" --port=$hostport"
 	if [ "$galera" = yes ] ; then innocommand=$innocommand" --galera-info" ; fi
 	if [ "$slave" = yes ] ; then innocommand=$innocommand" --slave-info" ; fi
 	if [ "$parallel" = yes ] ; then innocommand=$innocommand" --parallel=$threads" ; fi
@@ -123,6 +125,8 @@ function backup_cleanup {
 
 # Debug variables function
 function debugme {
+	echo "host: " "$host"
+	echo "hostport: " "$hostport"
 	echo "backupuser: " "$backupuser"
 	echo "backuppass: " "$backuppass"
 	echo "monyog: " "$monyog"

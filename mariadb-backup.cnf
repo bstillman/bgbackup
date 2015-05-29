@@ -2,6 +2,11 @@
 
 # mariadb-backup configuration file
 
+# MySQL host (optional)
+#host=127.0.0.1
+
+# MySQL host port (optional)
+#hostport=3306
 
 # MySQL backup username
 backupuser=testuser
