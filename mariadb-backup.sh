@@ -75,7 +75,7 @@ function backer_upper {
 	fi
 	if [ "$galera" = yes ] ; then
 		log_info "Enabling WSREP desync."
-		mysql -u "$backupuser" -p "$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
+		mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
 	fi
 	log_info "Beginning ${butype} Backup"
 	$innocommand 2>> "$logfile"
@@ -86,10 +86,10 @@ function backer_upper {
 	if [ "$galera" = yes ] ; then
 		log_info "Disabling WSREP desync."
 		until [ "$queue" -eq 0 ]; do
-    		queue=$(mysql -u "$backupuser" -p "$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
+    		queue=$(mysql -u "$backupuser" -p"$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
     		sleep 10
 		done
-		mysql -u "$backupuser" -p "$backuppass" -e "SET GLOBAL wsrep_desync=OFF;"
+		mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=OFF;"
 	fi
 	if [ "$monyog" = yes ] ; then
 		log_info "Enabling MONyog alerts"
