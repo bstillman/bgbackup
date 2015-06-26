@@ -10,6 +10,13 @@ else
 	exit 1
 fi
 
+if [ ! -d "$backupdir" ]
+then
+        echo "Error: $backupdir directory not found"
+        echo "The configured directory for backups does not exist. Please create this first"
+        exit 1
+fi
+
 # Functions
 
 # Mail function
