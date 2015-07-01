@@ -6,7 +6,7 @@ Backups ran on "fullbackday" will be full backups. Backups ran on other days wil
 
 The backups are done with xtrabackup/innobackupex. Backups are compressed (qpress) and encrypted (xbcrypt). 
 
-Details about each backup are emailed to all email addresses listed in MAILLIST and also logged in the database (PERCONA_SCHEMA.xtrabackup_history) for easier monitoring in MONyog. 
+Details about each backup are emailed to all email addresses listed in MAILLIST and also logged in the database (PERCONA_SCHEMA.xtrabackup_history) for easier monitoring in MONyog, Nagios, Cacti, etc.
 
 Encrypted incremental backups are enabled by decrypting the xtrabackup_checkpoints file. 
 
