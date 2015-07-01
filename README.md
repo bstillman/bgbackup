@@ -18,11 +18,7 @@ Option to disable MONyog alerts before, and enable after.
 
 Use the following to create the encryption key file: 
 ```
-openssl rand -base64 24
-```
-Send output to key file like:
-```
-echo -n "openssl_output_here" > /etc/my.cnf.d/backupscript.key
+echo -n `openssl rand -base64 24` > /etc/my.cnf.d/backupscript.key
 ```
 
 Grant these permissions to the backup user  <br />
