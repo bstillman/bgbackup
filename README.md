@@ -26,7 +26,7 @@ echo -n "openssl_output_here" > /etc/my.cnf.d/backupscript.key
 Grant these permissions to the backup user  <br />
 ```
 GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'backup_user'@'localhost' IDENTIFIED BY 'backup_password';
-GRANT CREATE, INSERT, SELECT ON PERCONA_SCHEMA.xtrabackup_history TO 'backup_user'@'localhost';
+GRANT CREATE, INSERT, SELECT ON PERCONA_SCHEMA.* TO 'backup_user'@'localhost';
 FLUSH PRIVILEGES; 
 ```
 
