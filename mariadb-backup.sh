@@ -46,13 +46,15 @@ function log_info() {
 function innocreate {
 	mhost=$(hostname)
 	innocommand="$innobackupex"
-	if [ "$bktype" = "directory" ] ; then
+	if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
     	if [ "$(date +%A)" = "$fullbackday" ] ; then
     		butype=Full
-    		innocommand=$innocommand" $backupdir/full-$(date +%Y-%m-%d_%H-%M-%S) --no-timestamp --history=$mhost"
+    		dirname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S)"
+    		innocommand=$innocommand" $dirname --no-timestamp --history=$mhost"
     	else
     		butype=Incremental
-    		innocommand=$innocommand" $backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S) --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+    		dirname="$backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S)"
+    		innocommand=$innocommand" $dirname --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
 	    fi
 	elif [ "$bktype" = "archive" ] ; then
 	   	if [ "$(date +%A)" = "$fullbackday" ] ; then
@@ -65,6 +67,7 @@ function innocreate {
     		arcname="$backupdir/inc-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
 	    fi
 	fi
+	if [ -n "$databases" ] && [ "$bktype" = "prepared-archive" ]; then innocommand=$innocommand" --databases=$databases"; fi
 	[ ! -z "$backupuser" ] && innocommand=$innocommand" --user=$backupuser"
 	[ ! -z "$backuppass" ] && innocommand=$innocommand" --password=$backuppass"
         [ ! -z "$host" ] && innocommand=$innocommand" --host=$host"
@@ -101,7 +104,7 @@ function backer_upper {
 		mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
 	fi
 	log_info "Beginning ${butype} Backup"
-	if [ "$bktype" = "directory" ] ; then
+	if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
     	$innocommand 2>> "$logfile"
 	    log_check
 	    if [ "$encrypt" = yes ] && [ "$log_status" = "SUCCEEDED" ] ; then 
@@ -125,11 +128,26 @@ function backer_upper {
 		monyog enable
 		sleep 30
 	fi
-	
+	backup_prepare
 	log_info "$butype backup $log_status"
 	log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 }
 
+# Function to prepare backup
+function backup_prepare {
+    if [ $bktype == "prepared-archive" ]; then
+        prepcommand="$innobackupex $dirname --apply-log"
+        if [ -n $databases ]; then prepcommand=$prepcommand" --export"; fi
+        log_info "Preparing backup."
+        $prepcommand 2>> "$logfile"
+        log_check
+        log_info "Backup prepare complete."
+        log_info "Archiving backup."
+        tar zcf "$dirname.tar.gz" -C "$dirname" . && rm -rf "$dirname"
+        log_info "Archiving complete."
+    fi
+}
+        
 # Function to cleanup old backups.
 function backup_cleanup {
 	if [ $log_status = "SUCCEEDED" ] ; then
@@ -154,7 +172,7 @@ function backup_cleanup {
 
 # Function to check config parameters
 function config_check {
-    if [ "$bktype" = "archive" ] && [ "$compress" = "yes" ] ; then
+    if [[ "$bktype" = "archive" || "$bktype" = "prepared-archive" ]] && [ "$compress" = "yes" ] ; then
         log_info "Archive backup type selected, disabling built-in compression."
         compress="no"
     fi
@@ -194,6 +212,8 @@ function debugme {
 	echo "log_status: " "$log_status"
 	echo "budirdate: " "$budirdate"	
 	echo "innocommand: " "$innocommand"
+	echo "prepcommand: " "$prepcommand"
+	echo "dirname: " "$dirname"
 	echo "mhost: " "$mhost"
 	echo "budir: " "$budir"
 }
