@@ -2,19 +2,43 @@
 
 bgbackup works with MariaDB, Percona, MySQL, Galera, etc. 
 
-Backups ran on "fullbackday" will be full backups. Backups ran on other days will be incremental. 
+The backups are done with xtrabackup/innobackupex. bgbackup supports multiple backup types, such as:
 
-The backups are done with xtrabackup/innobackupex. Backups are compressed (qpress) and encrypted (xbcrypt). 
+ * Standalone directories, with optional compression (qpress) and encryption (xbcrypt).
+ 
+ * Compressed tar archives (tar.gz). bgbackup may support multiple compressors in future.
+ 
+ * Optional "prepared" stage for tar archives where logs are applied before compression.
+ 
+ * Optional partial backup on specific database names.
+ 
+## Main features
+ 
+### Scheduling
+
+Backups ran on `fullbackday` will be full backups. Backups ran on other days will be incremental. 
+
+To disable incremental backups, set `fullbackday` to `Always`
+
+### Emails
 
 Details about each backup are emailed to all email addresses listed in MAILLIST and also logged in the database (PERCONA_SCHEMA.xtrabackup_history) for easier monitoring in MONyog, Nagios, Cacti, etc.
 
+### Encryption
+
+xbcrypt encryption is fully supported for directory backup type.
+
 Encrypted incremental backups are enabled by decrypting the xtrabackup_checkpoints file. 
 
-Options for inclusion of Galera and slave info.
+### Galera
 
-If Galera option is yes, the script will enable wsrep_desync on the node being backed up. When the backup is finished, it will check for wsrep_local_recv_queue to return to zero before disabling wsrep_desync. 
+If Galera option is set to yes, the script will enable wsrep_desync on the node being backed up. When the backup is finished, it will check for wsrep_local_recv_queue to return to zero before disabling wsrep_desync. 
+
+### MONYog support
 
 Option to disable MONyog alerts before, and enable after. 
+
+## Setup instructions
 
 Use the following to create the encryption key file: 
 ```
