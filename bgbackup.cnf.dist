@@ -68,6 +68,10 @@ cryptkey=/etc/my.cnf.d/backupscript.key
 # Compress backup?
 compress=yes
 
+# Compression utility used for archives, for now gzip or pigz (parallel gzip) are supported
+# For standalone directories, qpress is always used
+computil=gzip
+
 # Include Galera info?
 galera=no
 

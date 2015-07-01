@@ -120,7 +120,7 @@ function backer_upper {
 	    fi
 	fi
 	if [ "$bktype" = "archive" ] ; then
-	    $innocommand 2>> "$logfile" | gzip -c > "$arcname"
+	    $innocommand 2>> "$logfile" | $computil -c > "$arcname"
 	    log_check
 	fi
 	if [ "$galera" = yes ] ; then
@@ -151,7 +151,7 @@ function backup_prepare {
         log_check
         log_info "Backup prepare complete."
         log_info "Archiving backup."
-        tar zcf "$dirname.tar.gz" -C "$dirname" . && rm -rf "$dirname"
+        tar cf "$dirname.tar.gz" -C "$dirname" -I "$computil" . && rm -rf "$dirname"
         log_info "Archiving complete."
     fi
 }
@@ -183,6 +183,11 @@ function config_check {
     if [[ "$bktype" = "archive" || "$bktype" = "prepared-archive" ]] && [ "$compress" = "yes" ] ; then
         log_info "Archive backup type selected, disabling built-in compression."
         compress="no"
+    fi
+    if [[ "$computil" != "gzip" && "$computil" != "pigz" ]]; then
+        verbose="yes"
+        log_info "Fatal: $computil compression method is unsupported."
+        exit 1
     fi
 }
 
