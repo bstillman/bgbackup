@@ -1,4 +1,6 @@
-# mariadb-backup
+# bgbackup
+
+bgbackup works with MariaDB, Percona, MySQL, Galera, etc. 
 
 Backups ran on "fullbackday" will be full backups. Backups ran on other days will be incremental. 
 
