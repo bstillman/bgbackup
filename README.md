@@ -21,7 +21,6 @@ Use the following to create the encryption key file:
 echo -n $(openssl rand -base64 24) > /etc/my.cnf.d/backupscript.key
 ```
 
-
 Grant these permissions to the backup user  <br />
 ```
 GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'backup_user'@'localhost' IDENTIFIED BY 'backup_password';
@@ -49,8 +48,3 @@ chmod 600 /etc/my.cnf.d/xtrabackup.cnf
 chown mysql /etc/my.cnf.d/backupscript.key
 chmod 600 /etc/my.cnf.d/backupscript.key
 ```
-
-Todo: 
-- Clean up the clean up.
-- Continue testing. 
-- Add logic to allow subsequent runs on fullbackday to be incremental.
