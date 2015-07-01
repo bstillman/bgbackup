@@ -47,7 +47,7 @@ function innocreate {
 	mhost=$(hostname)
 	innocommand="$innobackupex"
 	if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
-    	if [ "$(date +%A)" = "$fullbackday" ] ; then
+    	if [[ "$(date +%A)" = "$fullbackday" || "$fullbackday" = "Always" ]] ; then
     		butype=Full
     		dirname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S)"
     		innocommand=$innocommand" $dirname --no-timestamp --history=$mhost"

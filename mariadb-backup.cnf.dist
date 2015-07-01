@@ -32,8 +32,8 @@ monyoghost=
 # MONyog port
 monyogport=
 
-# Day of week to do full backup
-fullbackday=Friday
+# Day of week to do full backup. Set to "Always" to always do a full backup.
+fullbackday=Always
 
 # Minimum number of days to keep backups
 keepday=10
