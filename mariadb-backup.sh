@@ -1,5 +1,7 @@
 #!/bin/bash
 
+if [ $(whoami) != "root" ]; then echo "Error: $(basename "$0") must be run as root."; exit 1; fi
+
 dir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 if [ -e "$dir"/mariadb-backup.cnf ]
 then
