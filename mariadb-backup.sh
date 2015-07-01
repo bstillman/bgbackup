@@ -35,19 +35,35 @@ function log_check {
 
 # Logging function
 function log_info() {
-	printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" >>"$logfile";
+    if [ "$verbose" == "no" ]; then
+    	printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" >>"$logfile"
+    else
+        printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" | tee "$logfile"
+    fi
 }
 
 # Function to create innobackupex command
 function innocreate {
 	mhost=$(hostname)
 	innocommand="$innobackupex"
-	if [ "$(date +%A)" = "$fullbackday" ] ; then
-		butype=Full
-		innocommand=$innocommand" $backupdir/full-$(date +%Y-%m-%d_%H-%M-%S) --no-timestamp --history=$mhost"
-	else
-		butype=Incremental
-		innocommand=$innocommand" $backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S) --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+	if [ "$bktype" = "directory" ] ; then
+    	if [ "$(date +%A)" = "$fullbackday" ] ; then
+    		butype=Full
+    		innocommand=$innocommand" $backupdir/full-$(date +%Y-%m-%d_%H-%M-%S) --no-timestamp --history=$mhost"
+    	else
+    		butype=Incremental
+    		innocommand=$innocommand" $backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S) --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+	    fi
+	elif [ "$bktype" = "archive" ] ; then
+	   	if [ "$(date +%A)" = "$fullbackday" ] ; then
+    		butype=Full
+    		innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost"
+    		arcname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
+    	else
+    		butype=Incremental
+    		innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+    		arcname="$backupdir/inc-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
+	    fi
 	fi
 	[ ! -z "$backupuser" ] && innocommand=$innocommand" --user=$backupuser"
 	[ ! -z "$backuppass" ] && innocommand=$innocommand" --password=$backuppass"
@@ -85,10 +101,16 @@ function backer_upper {
 		mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
 	fi
 	log_info "Beginning ${butype} Backup"
-	$innocommand 2>> "$logfile"
-	log_check
-	if [ "$encrypt" = yes ] && [ "$log_status" = "SUCCEEDED" ] ; then 
-		checkpointsdecrypt
+	if [ "$bktype" = "directory" ] ; then
+    	$innocommand 2>> "$logfile"
+	    log_check
+	    if [ "$encrypt" = yes ] && [ "$log_status" = "SUCCEEDED" ] ; then 
+	    	checkpointsdecrypt
+	    fi
+	fi
+	if [ "$bktype" = "archive" ] ; then
+	    $innocommand 2>> "$logfile" | gzip -c > "$arcname"
+	    log_check
 	fi
 	if [ "$galera" = yes ] ; then
 		log_info "Disabling WSREP desync."
@@ -110,7 +132,7 @@ function backer_upper {
 
 # Function to cleanup old backups.
 function backup_cleanup {
-	if [ $log_status = SUCCEEDED ] ; then
+	if [ $log_status = "SUCCEEDED" ] ; then
 		firstfulldel=$(find "$backupdir" -name 'full-*' -mtime +"$keepday" | sort -r | head -n 1)
 		deldate=$(stat -c %y "$firstfulldel" | awk '{print $1}')
 		declare -a TO_DELETE=($(find "$backupdir" -maxdepth 1 -name 'full*' -o -name 'incr*' -not -newermt "$deldate"))
@@ -130,12 +152,22 @@ function backup_cleanup {
 	fi
 }
 
+# Function to check config parameters
+function config_check {
+    if [ "$bktype" = "archive" ] && [ "$compress" = "yes" ] ; then
+        log_info "Archive backup type selected, disabling built-in compression."
+        compress="no"
+    fi
+}
+
 # Debug variables function
 function debugme {
 	echo "host: " "$host"
 	echo "hostport: " "$hostport"
 	echo "backupuser: " "$backupuser"
 	echo "backuppass: " "$backuppass"
+	echo "bktype: " "$bktype"
+	echo "arctype: " "$arctype"
 	echo "monyog: " "$monyog"
 	echo "monyogserver: " "$monyogserver"
 	echo "monyoguser: " "$monyoguser"
@@ -182,6 +214,8 @@ else
    mail_log
    exit
 fi
+
+config_check # Check vital configuration parameters
 
 backer_upper # Execute the backup. 
 
