@@ -44,6 +44,15 @@ backupdir=/backups
 # Path to keep logs
 logpath=/var/log
 
+# Log verbosity
+verbose=no
+
+# Backup type (directory or archive)
+bktype=directory
+
+# Archive type (tar or xbstream)
+arctype=tar
+
 # Used for parallel and compress
 threads=4
 
@@ -66,9 +75,9 @@ galera=no
 slave=no
 
 # Comma separated list of email address to be notified.
-maillist=ben@mariadb.com,guillaume@mariadb.com
+maillist=ben@2co.com,guillaume@mariadb.com
 
 # Email subject prefix
-mailsubpre="[dbhc-mariadb]"
+mailsubpre="[MariaDB Backup]"
 
 ############################################
