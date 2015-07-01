@@ -1,11 +1,19 @@
 #!/bin/bash
 
+# bgbackup - A backup shell script for MariaDB, MySQL and Percona
+#
+# Authors: Ben Stillman <ben@2co.com>, Guillaume Lefranc <guillaume@mariadb.com>
+# License: GNU General Public License, version 3.
+# Redistribution/Reuse of this code is permitted under the GNU v3 license.
+# As an additional term ALL code must carry the original Author(s) credit in comment form.
+# See LICENSE in this directory for the integral text.
+
 dir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-if [ -e "$dir"/mariadb-backup.cnf ]
+if [ -e "$dir"/bgbackup.cnf ]
 then
-	source "$dir"/mariadb-backup.cnf
+	source "$dir"/bgbackup.cnf
 else
-	echo "Error: mariadb-backup.cnf configuration file not found"
+	echo "Error: bgbackup.cnf configuration file not found"
 	echo "The configuration file must exist in the same directory where the script is located"
 	exit 1
 fi
@@ -223,7 +231,7 @@ function debugme {
 
 # Set some specific variables
 mdate=$(date +%m/%d/%y)	# Date for mail subject. Not in function so set at script start time, not when backup is finished.
-logfile=$logpath/mariadb_backup_$(date +%Y-%m-%d-%T).log	# logfile
+logfile=$logpath/bgbackup_$(date +%Y-%m-%d-%T).log	# logfile
 
 # Check for xtrabackup
 if command -v innobackupex >/dev/null; then
