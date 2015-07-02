@@ -1,6 +1,8 @@
 # bgbackup
 
-bgbackup works with MariaDB, Percona, MySQL, Galera, etc. 
+bgbackup is a MySQL ecosystem wrapper script for setting up a daily database backup routine. It can be configured to run different types of backups, and send a status email upon completion.
+
+bgbackup works with MariaDB, Percona, MySQL, Galera Cluster, WebscaleSQL, etc.
 
 The backups are done with xtrabackup/innobackupex. bgbackup supports multiple backup types, such as:
 
