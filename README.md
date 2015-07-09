@@ -8,7 +8,7 @@ The backups are done with xtrabackup/innobackupex. bgbackup supports multiple ba
 
  * Standalone directories, with optional compression (qpress) and encryption (xbcrypt).
  
- * Compressed tar archives (tar.gz). bgbackup may support multiple compressors in future.
+ * Compressed tar archives with gzip and pigz (parallel gzip) support. bgbackup may support multiple compressors in future. 
  
  * Optional "prepared" stage for tar archives where logs are applied before compression.
  
@@ -31,6 +31,14 @@ Details about each backup are emailed to all email addresses listed in MAILLIST 
 xbcrypt encryption is fully supported for directory backup type.
 
 Encrypted incremental backups are enabled by decrypting the xtrabackup_checkpoints file. 
+
+### Compression
+
+bgbackup supports two different compression modes:
+
+ * qpress for standalone directory backup types. Each file is compressed individually.
+
+ * gzip and pigz (parallel gzip) for tar archive backup types. Additional support for other compressors will be added in the future.
 
 ### Galera
 
