@@ -34,7 +34,7 @@ function mail_log {
 
 # Function to check log for okay
 function log_check {
-	if grep -q 'innobackupex: completed OK' "$logfile" ; then
+	if grep -q 'completed OK' "$logfile" ; then
 		log_status=SUCCEEDED
 	else
 		log_status=FAILED
