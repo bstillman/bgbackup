@@ -34,7 +34,7 @@ function mail_log {
 
 # Function to check log for okay
 function log_check {
-	if grep -q 'completed OK' "$logfile" ; then
+	if grep -Eq 'completed OK!$' "$logfile" ; then
 		log_status=SUCCEEDED
 	else
 		log_status=FAILED
@@ -242,10 +242,10 @@ logfile=$logpath/bgbackup_$(date +%Y-%m-%d-%T).log	# logfile
 if command -v innobackupex >/dev/null; then
     innobackupex=$(command -v innobackupex)
 else
-   log_info "xtrabackup/innobackupex does not appear to be installed. Please install and try again."
-   log_status=FAILED
-   mail_log
-   exit
+    log_info "xtrabackup/innobackupex does not appear to be installed. Please install and try again."
+    log_status=FAILED
+    mail_log
+    exit
 fi
 
 config_check # Check vital configuration parameters
@@ -254,8 +254,10 @@ backer_upper # Execute the backup.
 
 backup_cleanup # Cleanup old backups. 
 
-mail_log # Mail results to maillist.
+if [ "$log_status" = "FAILED" ] || [ "$mailonsuccess" = "yes" ] ; then
+    mail_log # Mail results to maillist.
+fi
 
-debugme	# Comment out to disable listing of all variables.
+#debugme	# Comment out to disable listing of all variables.
 
 exit
