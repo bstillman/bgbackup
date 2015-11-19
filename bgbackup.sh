@@ -46,7 +46,7 @@ function log_info() {
     if [ "$verbose" == "no" ]; then
     	printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" >>"$logfile"
     else
-        printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" | tee "$logfile"
+        printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" | tee -a "$logfile"
     fi
 }
 
