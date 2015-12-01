@@ -48,6 +48,10 @@ If Galera option is set to yes, the script will enable wsrep_desync on the node 
 
 Option to disable MONyog alerts before, and enable after. 
 
+### Run external commands after backup
+
+You are able to set external commands to be run after successful or failed backup, respectively 
+
 ## Setup instructions
 
 Use the following to create the encryption key file: 
