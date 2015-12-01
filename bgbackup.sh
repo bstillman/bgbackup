@@ -229,6 +229,8 @@ function debugme {
 	echo "dirname: " "$dirname"
 	echo "mhost: " "$mhost"
 	echo "budir: " "$budir"
+        echo "run_after_success: " "$run_after_success"
+        echo "run_after_fail: " "$run_after_fail"
 }
 
 ############################################
@@ -256,6 +258,14 @@ backup_cleanup # Cleanup old backups.
 
 if [ "$log_status" = "FAILED" ] || [ "$mailonsuccess" = "yes" ] ; then
     mail_log # Mail results to maillist.
+fi
+
+# run commands after backup, eventually
+if [ "$log_status" = "SUCCEEDED" ] && [ ! -z "$run_after_success" ] ; then
+    $run_after_success # run the command if backup was successful
+else if [ "$log_status" = "FAILED" ] && [ ! -z "$run_after_fail" ] ; then
+    $run_after_fail # run the command if backup had failed
+fi
 fi
 
 #debugme	# Comment out to disable listing of all variables.
