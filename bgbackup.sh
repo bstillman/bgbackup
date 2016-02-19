@@ -160,21 +160,25 @@ function backup_prepare {
 function backup_cleanup {
 	if [ $log_status = "SUCCEEDED" ] ; then
 		firstfulldel=$(find "$backupdir" -name 'full-*' -mtime +"$keepday" | sort -r | head -n 1)
-		deldate=$(stat -c %y "$firstfulldel" | awk '{print $1}')
-		declare -a TO_DELETE=($(find "$backupdir" -maxdepth 1 -name 'full*' -o -name 'incr*' -not -newermt "$deldate"))
-		if [ ${#TO_DELETE[@]} -gt 1 ] ; then
-			log_info "Beginning cleanup of old backups."
-			for d in "${TO_DELETE[@]}"
-			do
-				log_info "Deleted backup $d"
-				rm -Rf "${backupdir:?}"/"$d"
-			done
-			log_info "Backup cleanup complete."
-		else
-			log_info "No backups to clean."
+		if [ ${#firstfulldel[@]} -gt 1 ] ; then
+			deldate=$(stat -c %y "$firstfulldel" | awk '{print $1}')
+			declare -a TO_DELETE=($(find "$backupdir" -maxdepth 1 -name 'full*' -o -name 'incr*' -not -newermt "$deldate"))
+			if [ ${#TO_DELETE[@]} -gt 1 ] ; then
+				log_info "Beginning cleanup of old backups."
+				for d in "${TO_DELETE[@]}"
+				do
+					log_info "Deleted backup $d"
+					rm -Rf "${backupdir:?}"/"$d"
+				done
+				log_info "Backup cleanup complete."
+			else
+				log_info "No backups to clean."
+			fi
+		else 
+			log_info "No backups found older than $keepday days. No backups deleted at this time." 
 		fi
 	else
-		log_info "Backup failed. No old backups deleted at this time."
+		log_info "Backup failed. No backups deleted at this time."
 	fi
 }
 
