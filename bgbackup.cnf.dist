@@ -79,7 +79,7 @@ galera=no
 slave=no
 
 # Comma separated list of email address to be notified.
-maillist=ben@2co.com,guillaume@mariadb.com
+maillist=ben@mariadb.com,guillaume@mariadb.com
 
 # Email subject prefix
 mailsubpre="[BGBackup]"
