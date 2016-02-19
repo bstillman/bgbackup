@@ -58,25 +58,25 @@ function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
-    if [[ "$(date +%A)" = "$fullbackday" || "$fullbackday" = "Always" ]] ; then
-        butype=Full
-        dirname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S)"
-        innocommand=$innocommand" $dirname --no-timestamp --history=$mhost"
-    else
-        butype=Incremental
-        dirname="$backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S)"
-        innocommand=$innocommand" $dirname --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
-    fi
+        if [[ "$(date +%A)" = "$fullbackday" || "$fullbackday" = "Always" ]] ; then
+            butype=Full
+            dirname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S)"
+            innocommand=$innocommand" $dirname --no-timestamp --history=$mhost"
+        else
+            butype=Incremental
+            dirname="$backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S)"
+            innocommand=$innocommand" $dirname --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+        fi
     elif [ "$bktype" = "archive" ] ; then
         if [ "$(date +%A)" = "$fullbackday" ] ; then
-        butype=Full
-        innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost"
-        arcname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
-    else
-        butype=Incremental
-        innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
-        arcname="$backupdir/inc-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
-    fi
+            butype=Full
+            innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost"
+            arcname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
+        else
+            butype=Incremental
+            innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+            arcname="$backupdir/inc-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
+        fi
     fi
     if [ -n "$databases" ] && [ "$bktype" = "prepared-archive" ]; then innocommand=$innocommand" --databases=$databases"; fi
     [ ! -z "$backupuser" ] && innocommand=$innocommand" --user=$backupuser"
