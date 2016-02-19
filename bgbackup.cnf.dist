@@ -35,7 +35,7 @@ monyogport=
 # Day of week to do full backup. Set to "Always" to always do a full backup.
 fullbackday=Always
 
-# Minimum number of days to keep backups
+# Minimum number of days to keep full backups
 keepday=10
 
 # Full path to backup directory root
