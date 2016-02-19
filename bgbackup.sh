@@ -88,10 +88,9 @@ function innocreate {
 }
 
 # Function to decrypt xtrabackup_checkpoints 
+# Function to decrypt xtrabackup_checkpoints 
 function checkpointsdecrypt {
-	budirdate=$(date +%Y-%m-%d)
-	files=("$backupdir"/"$budirdate"*); budir=${files[${#files[@]} -1 ]}
-	xbcrypt -d --encrypt-key-file="$cryptkey" --encrypt-algo=AES256 < "$budir"/xtrabackup_checkpoints.xbcrypt > "$budir"/xtrabackup_checkpoints
+	xbcrypt -d --encrypt-key-file="$cryptkey" --encrypt-algo=AES256 < "$dirname"/xtrabackup_checkpoints.xbcrypt > "$dirname"/xtrabackup_checkpoints
 }
 
 # Function to disable/enable MONyog alerts
