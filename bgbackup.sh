@@ -275,6 +275,8 @@ else if [ "$log_status" = "FAILED" ] && [ ! -z "$run_after_fail" ] ; then
 fi
 fi
 
-#debugme	# Comment out to disable listing of all variables.
+if [ "$debug" = yes ] ; then
+    debugme
+fi
 
 exit
