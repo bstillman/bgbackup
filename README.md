@@ -85,4 +85,7 @@ chmod 600 /etc/my.cnf.d/xtrabackup.cnf
 
 chown mysql /etc/my.cnf.d/backupscript.key
 chmod 600 /etc/my.cnf.d/backupscript.key
+
+chown mysql /PATH/TO/bgbackup.cnf
+chmod 600 /PATH/TO/bgbackup.cnf
 ```
