@@ -148,7 +148,7 @@ function backer_upper {
 function backup_prepare {
     if [ $bktype == "prepared-archive" ]; then
         prepcommand="$innobackupex $dirname --apply-log"
-        if [ -n $databases ]; then prepcommand=$prepcommand" --export"; fi
+        if [ -n "$databases" ]; then prepcommand=$prepcommand" --export"; fi
         log_info "Preparing backup."
         $prepcommand 2>> "$logfile"
         log_check
