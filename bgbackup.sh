@@ -270,7 +270,7 @@ fi
 # run commands after backup, eventually
 if [ "$log_status" = "SUCCEEDED" ] && [ ! -z "$run_after_success" ] ; then
     $run_after_success # run the command if backup was successful
-else if [ "$log_status" = "FAILED" ] && [ ! -z "$run_after_fail" ] ; then
+elif [ "$log_status" = "FAILED" ] && [ ! -z "$run_after_fail" ] ; then
     $run_after_fail # run the command if backup had failed
 fi
 fi
