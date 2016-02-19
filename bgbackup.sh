@@ -11,43 +11,43 @@
 etccnf=$( find /etc -name bgbackup.cnf )
 scriptdir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 if [ -e "$etccnf" ]; then
-	source "$etccnf"
+    source "$etccnf"
 elif [ -e "$scriptdir"/bgbackup.cnf ]; then
-	source "$scriptdir"/bgbackup.cnf
+    source "$scriptdir"/bgbackup.cnf
 else
-	echo "Error: bgbackup.cnf configuration file not found"
-	echo "The configuration file must exist somewhere in /etc or"
-	echo "in the same directory where the script is located"
-	exit 1
+    echo "Error: bgbackup.cnf configuration file not found"
+    echo "The configuration file must exist somewhere in /etc or"
+    echo "in the same directory where the script is located"
+    exit 1
 fi
 
 if [ ! -d "$backupdir" ]
 then
-        echo "Error: $backupdir directory not found"
-        echo "The configured directory for backups does not exist. Please create this first"
-        exit 1
+    echo "Error: $backupdir directory not found"
+    echo "The configured directory for backups does not exist. Please create this first"
+    exit 1
 fi
 
 # Functions
 
 # Mail function
 function mail_log {
-	mail -s "$mailsubpre $HOSTNAME Backup $log_status $mdate" "$maillist" < "$logfile"
+    mail -s "$mailsubpre $HOSTNAME Backup $log_status $mdate" "$maillist" < "$logfile"
 }
 
 # Function to check log for okay
 function log_check {
-	if grep -Eq 'completed OK!$' "$logfile" ; then
-		log_status=SUCCEEDED
-	else
-		log_status=FAILED
-	fi
+    if grep -Eq 'completed OK!$' "$logfile" ; then
+        log_status=SUCCEEDED
+    else
+        log_status=FAILED
+    fi
 }
 
 # Logging function
 function log_info() {
     if [ "$verbose" == "no" ]; then
-    	printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" >>"$logfile"
+        printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" >>"$logfile"
     else
         printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" | tee -a "$logfile"
     fi
@@ -55,92 +55,92 @@ function log_info() {
 
 # Function to create innobackupex command
 function innocreate {
-	mhost=$(hostname)
-	innocommand="$innobackupex"
-	if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
-    	if [[ "$(date +%A)" = "$fullbackday" || "$fullbackday" = "Always" ]] ; then
-    		butype=Full
-    		dirname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S)"
-    		innocommand=$innocommand" $dirname --no-timestamp --history=$mhost"
-    	else
-    		butype=Incremental
-    		dirname="$backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S)"
-    		innocommand=$innocommand" $dirname --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
-	    fi
-	elif [ "$bktype" = "archive" ] ; then
-	   	if [ "$(date +%A)" = "$fullbackday" ] ; then
-    		butype=Full
-    		innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost"
-    		arcname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
-    	else
-    		butype=Incremental
-    		innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
-    		arcname="$backupdir/inc-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
-	    fi
-	fi
-	if [ -n "$databases" ] && [ "$bktype" = "prepared-archive" ]; then innocommand=$innocommand" --databases=$databases"; fi
-	[ ! -z "$backupuser" ] && innocommand=$innocommand" --user=$backupuser"
-	[ ! -z "$backuppass" ] && innocommand=$innocommand" --password=$backuppass"
-        [ ! -z "$host" ] && innocommand=$innocommand" --host=$host"
-        [ ! -z "$hostport" ] && innocommand=$innocommand" --port=$hostport"
-	if [ "$galera" = yes ] ; then innocommand=$innocommand" --galera-info" ; fi
-	if [ "$slave" = yes ] ; then innocommand=$innocommand" --slave-info" ; fi
-	if [ "$parallel" = yes ] ; then innocommand=$innocommand" --parallel=$threads" ; fi
-	if [ "$compress" = yes ] ; then innocommand=$innocommand" --compress --compress-threads=$threads" ; fi
-	if [ "$encrypt" = yes ] ; then innocommand=$innocommand" --encrypt=AES256 --encrypt-key-file=$cryptkey" ; fi
+    mhost=$(hostname)
+    innocommand="$innobackupex"
+    if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
+    if [[ "$(date +%A)" = "$fullbackday" || "$fullbackday" = "Always" ]] ; then
+        butype=Full
+        dirname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S)"
+        innocommand=$innocommand" $dirname --no-timestamp --history=$mhost"
+    else
+        butype=Incremental
+        dirname="$backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S)"
+        innocommand=$innocommand" $dirname --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+    fi
+    elif [ "$bktype" = "archive" ] ; then
+        if [ "$(date +%A)" = "$fullbackday" ] ; then
+        butype=Full
+        innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost"
+        arcname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
+    else
+        butype=Incremental
+        innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+        arcname="$backupdir/inc-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
+    fi
+    fi
+    if [ -n "$databases" ] && [ "$bktype" = "prepared-archive" ]; then innocommand=$innocommand" --databases=$databases"; fi
+    [ ! -z "$backupuser" ] && innocommand=$innocommand" --user=$backupuser"
+    [ ! -z "$backuppass" ] && innocommand=$innocommand" --password=$backuppass"
+    [ ! -z "$host" ] && innocommand=$innocommand" --host=$host"
+    [ ! -z "$hostport" ] && innocommand=$innocommand" --port=$hostport"
+    if [ "$galera" = yes ] ; then innocommand=$innocommand" --galera-info" ; fi
+    if [ "$slave" = yes ] ; then innocommand=$innocommand" --slave-info" ; fi
+    if [ "$parallel" = yes ] ; then innocommand=$innocommand" --parallel=$threads" ; fi
+    if [ "$compress" = yes ] ; then innocommand=$innocommand" --compress --compress-threads=$threads" ; fi
+    if [ "$encrypt" = yes ] ; then innocommand=$innocommand" --encrypt=AES256 --encrypt-key-file=$cryptkey" ; fi
 }
 
 # Function to decrypt xtrabackup_checkpoints 
 # Function to decrypt xtrabackup_checkpoints 
 function checkpointsdecrypt {
-	xbcrypt -d --encrypt-key-file="$cryptkey" --encrypt-algo=AES256 < "$dirname"/xtrabackup_checkpoints.xbcrypt > "$dirname"/xtrabackup_checkpoints
+    xbcrypt -d --encrypt-key-file="$cryptkey" --encrypt-algo=AES256 < "$dirname"/xtrabackup_checkpoints.xbcrypt > "$dirname"/xtrabackup_checkpoints
 }
 
 # Function to disable/enable MONyog alerts
 function monyog {
-	curl "${monyoghost}:${monyogport}/?_object=MONyogAPI&_action=Alerts&_value=${1}&_user=${monyoguser}&_password=${monyogpass}&_server=${monyogserver}"
+    curl "${monyoghost}:${monyogport}/?_object=MONyogAPI&_action=Alerts&_value=${1}&_user=${monyoguser}&_password=${monyogpass}&_server=${monyogserver}"
 }
 
 # Function to do the backup
 function backer_upper {
-	innocreate
-	if [ "$monyog" = yes ] ; then
-		log_info "Disabling MONyog alerts"
-		monyog disable
-		sleep 30
-	fi
-	if [ "$galera" = yes ] ; then
-		log_info "Enabling WSREP desync."
-		mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
-	fi
-	log_info "Beginning ${butype} Backup"
-	if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
-    	$innocommand 2>> "$logfile"
-	    log_check
-	    if [ "$encrypt" = yes ] && [ "$log_status" = "SUCCEEDED" ] ; then 
-	    	checkpointsdecrypt
-	    fi
-	fi
-	if [ "$bktype" = "archive" ] ; then
-	    $innocommand 2>> "$logfile" | $computil -c > "$arcname"
-	    log_check
-	fi
-	if [ "$galera" = yes ] ; then
-		log_info "Disabling WSREP desync."
-		until [ "$queue" -eq 0 ]; do
-    		queue=$(mysql -u "$backupuser" -p"$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
-    		sleep 10
-		done
-		mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=OFF;"
-	fi
-	if [ "$monyog" = yes ] ; then
-		log_info "Enabling MONyog alerts"
-		monyog enable
-		sleep 30
-	fi
-	backup_prepare
-	log_info "$butype backup $log_status"
-	log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
+    innocreate
+    if [ "$monyog" = yes ] ; then
+        log_info "Disabling MONyog alerts"
+        monyog disable
+        sleep 30
+    fi
+    if [ "$galera" = yes ] ; then
+        log_info "Enabling WSREP desync."
+        mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
+    fi
+    log_info "Beginning ${butype} Backup"
+    if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
+        $innocommand 2>> "$logfile"
+        log_check
+        if [ "$encrypt" = yes ] && [ "$log_status" = "SUCCEEDED" ] ; then 
+        checkpointsdecrypt
+    fi
+    fi
+    if [ "$bktype" = "archive" ] ; then
+        $innocommand 2>> "$logfile" | $computil -c > "$arcname"
+        log_check
+    fi
+    if [ "$galera" = yes ] ; then
+        log_info "Disabling WSREP desync."
+        until [ "$queue" -eq 0 ]; do
+        queue=$(mysql -u "$backupuser" -p"$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
+        sleep 10
+        done
+        mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=OFF;"
+    fi
+    if [ "$monyog" = yes ] ; then
+        log_info "Enabling MONyog alerts"
+        monyog enable
+        sleep 30
+    fi
+    backup_prepare
+    log_info "$butype backup $log_status"
+    log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 }
 
 # Function to prepare backup
@@ -160,28 +160,28 @@ function backup_prepare {
         
 # Function to cleanup old backups.
 function backup_cleanup {
-	if [ $log_status = "SUCCEEDED" ] ; then
-		firstfulldel=$(find "$backupdir" -name 'full-*' -mtime +"$keepday" | sort -r | head -n 1)
-		if [ ${#firstfulldel[@]} -gt 1 ] ; then
-			deldate=$(stat -c %y "$firstfulldel" | awk '{print $1}')
-			declare -a TO_DELETE=($(find "$backupdir" -maxdepth 1 -name 'full*' -o -name 'incr*' -not -newermt "$deldate"))
-			if [ ${#TO_DELETE[@]} -gt 1 ] ; then
-				log_info "Beginning cleanup of old backups."
-				for d in "${TO_DELETE[@]}"
-				do
-					log_info "Deleted backup $d"
-					rm -Rf "${backupdir:?}"/"$d"
-				done
-				log_info "Backup cleanup complete."
-			else
-				log_info "No backups to clean."
-			fi
-		else 
-			log_info "No backups found older than $keepday days. No backups deleted at this time." 
-		fi
-	else
-		log_info "Backup failed. No backups deleted at this time."
-	fi
+    if [ $log_status = "SUCCEEDED" ] ; then
+        firstfulldel=$(find "$backupdir" -name 'full-*' -mtime +"$keepday" | sort -r | head -n 1)
+        if [ ${#firstfulldel[@]} -gt 1 ] ; then
+            deldate=$(stat -c %y "$firstfulldel" | awk '{print $1}')
+            declare -a TO_DELETE=($(find "$backupdir" -maxdepth 1 -name 'full*' -o -name 'incr*' -not -newermt "$deldate"))
+            if [ ${#TO_DELETE[@]} -gt 1 ] ; then
+                log_info "Beginning cleanup of old backups."
+                for d in "${TO_DELETE[@]}"
+                do
+                log_info "Deleted backup $d"
+                rm -Rf "${backupdir:?}"/"$d"
+                done
+                log_info "Backup cleanup complete."
+            else
+                log_info "No backups to clean."
+            fi
+        else 
+            log_info "No backups found older than $keepday days. No backups deleted at this time." 
+        fi
+    else
+        log_info "Backup failed. No backups deleted at this time."
+    fi
 }
 
 # Function to check config parameters
@@ -199,44 +199,44 @@ function config_check {
 
 # Debug variables function
 function debugme {
-	echo "host: " "$host"
-	echo "hostport: " "$hostport"
-	echo "backupuser: " "$backupuser"
-	echo "backuppass: " "$backuppass"
-	echo "bktype: " "$bktype"
-	echo "arctype: " "$arctype"
-	echo "monyog: " "$monyog"
-	echo "monyogserver: " "$monyogserver"
-	echo "monyoguser: " "$monyoguser"
-	echo "monyogpass: " "$monyogpass"
-	echo "monyoghost: " "$monyoghost"
-	echo "monyogport: " "$monyogport"
-	echo "fullbackday: " "$fullbackday"
-	echo "keepday: " "$keepday"
-	echo "backupdir: " "$backupdir"
-	echo "logpath: " "$logpath"
-	echo "threads: " "$threads"
-	echo "parallel: " "$parallel"
-	echo "encrypt: " "$encrypt"
-	echo "cryptkey: " "$cryptkey"
-	echo "compress: " "$compress"
-	echo "galera: " "$galera"
-	echo "slave: " "$slave"
-	echo "maillist: " "$maillist"
-	echo "mailsubpre: " "$mailsubpre"
-	echo "mdate: " "$mdate"
-	echo "logfile: " "$logfile"
-	echo "queue: " "$queue"
-	echo "butype: " "$butype"
-	echo "log_status: " "$log_status"
-	echo "budirdate: " "$budirdate"	
-	echo "innocommand: " "$innocommand"
-	echo "prepcommand: " "$prepcommand"
-	echo "dirname: " "$dirname"
-	echo "mhost: " "$mhost"
-	echo "budir: " "$budir"
-        echo "run_after_success: " "$run_after_success"
-        echo "run_after_fail: " "$run_after_fail"
+    echo "host: " "$host"
+    echo "hostport: " "$hostport"
+    echo "backupuser: " "$backupuser"
+    echo "backuppass: " "$backuppass"
+    echo "bktype: " "$bktype"
+    echo "arctype: " "$arctype"
+    echo "monyog: " "$monyog"
+    echo "monyogserver: " "$monyogserver"
+    echo "monyoguser: " "$monyoguser"
+    echo "monyogpass: " "$monyogpass"
+    echo "monyoghost: " "$monyoghost"
+    echo "monyogport: " "$monyogport"
+    echo "fullbackday: " "$fullbackday"
+    echo "keepday: " "$keepday"
+    echo "backupdir: " "$backupdir"
+    echo "logpath: " "$logpath"
+    echo "threads: " "$threads"
+    echo "parallel: " "$parallel"
+    echo "encrypt: " "$encrypt"
+    echo "cryptkey: " "$cryptkey"
+    echo "compress: " "$compress"
+    echo "galera: " "$galera"
+    echo "slave: " "$slave"
+    echo "maillist: " "$maillist"
+    echo "mailsubpre: " "$mailsubpre"
+    echo "mdate: " "$mdate"
+    echo "logfile: " "$logfile"
+    echo "queue: " "$queue"
+    echo "butype: " "$butype"
+    echo "log_status: " "$log_status"
+    echo "budirdate: " "$budirdate"	
+    echo "innocommand: " "$innocommand"
+    echo "prepcommand: " "$prepcommand"
+    echo "dirname: " "$dirname"
+    echo "mhost: " "$mhost"
+    echo "budir: " "$budir"
+    echo "run_after_success: " "$run_after_success"
+    echo "run_after_fail: " "$run_after_fail"
 }
 
 ############################################
