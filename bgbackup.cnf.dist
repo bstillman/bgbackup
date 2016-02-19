@@ -84,8 +84,8 @@ maillist=ben@mariadb.com,guillaume@mariadb.com
 # Email subject prefix
 mailsubpre="[BGBackup]"
 
-# Always email on success
-mailonsuccess=yes
+# Email on success
+mailonsuccess=no
 
 # Run command(s) after backup, for example: run_on_success=/usr/local/bin/success.sh 
 # (leave empty if you do not want to run anything)
@@ -93,5 +93,9 @@ mailonsuccess=yes
 run_after_success=
 # If backup failed
 run_after_fail=
+
+# Debug prints all variables to the commandline when script is ran.
+# This can be a security risk. Set to yes to enable.
+debug=no
 
 ############################################
