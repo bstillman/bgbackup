@@ -8,13 +8,16 @@
 # As an additional term ALL code must carry the original Author(s) credit in comment form.
 # See LICENSE in this directory for the integral text.
 
-dir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-if [ -e "$dir"/bgbackup.cnf ]
-then
-	source "$dir"/bgbackup.cnf
+etccnf=$( find /etc -name bgbackup.cnf )
+scriptdir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+if [ -e "$etccnf" ]; then
+	source "$etccnf"
+elif [ -e "$scriptdir"/bgbackup.cnf ]; then
+	source "$scriptdir"/bgbackup.cnf
 else
 	echo "Error: bgbackup.cnf configuration file not found"
-	echo "The configuration file must exist in the same directory where the script is located"
+	echo "The configuration file must exist somewhere in /etc or"
+	echo "in the same directory where the script is located"
 	exit 1
 fi
 
