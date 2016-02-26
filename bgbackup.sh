@@ -57,7 +57,7 @@ function log_info() {
 function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
-    alreadyfull=($(ls -l /backups --time-style=+%Y-%m-%d | awk "/$(date +'%Y-%m-%d')/ {print \$7}" | grep full))
+    alreadyfull=($(ls -l "$backupdir" --time-style=+%Y-%m-%d | awk "/$(date +'%Y-%m-%d')/ {print \$7}" | grep full))
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
          if ([ "$(date +%A)" = "$fullbackday" ] && [ -z "$alreadyfull" ]) || [ "$fullbackday" = "Always" ] ; then
             butype=Full
