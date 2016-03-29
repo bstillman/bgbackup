@@ -28,6 +28,7 @@ then
     exit 1
 fi
 
+
 # Functions
 
 # Mail function
@@ -57,26 +58,27 @@ function log_info() {
 function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
+    dirdate=$(date +%Y-%m-%d_%H-%M-%S)
     alreadyfull=($(ls -l "$backupdir" --time-style=+%Y-%m-%d | awk "/$(date +'%Y-%m-%d')/ {print \$7}" | grep full))
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
          if ([ "$(date +%A)" = "$fullbackday" ] && [ -z "$alreadyfull" ]) || [ "$fullbackday" = "Always" ] ; then
             butype=Full
-            dirname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S)"
+            dirname="$backupdir/full-$dirdate"
             innocommand=$innocommand" $dirname --no-timestamp --history=$mhost"
         else
             butype=Incremental
-            dirname="$backupdir/incr-$(date +%Y-%m-%d_%H-%M-%S)"
+            dirname="$backupdir/incr-$dirdate"
             innocommand=$innocommand" $dirname --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
         fi
     elif [ "$bktype" = "archive" ] ; then
         if [ "$(date +%A)" = "$fullbackday" ] ; then
             butype=Full
             innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost"
-            arcname="$backupdir/full-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
+            arcname="$backupdir/full-$dirdate.$arctype.gz"
         else
             butype=Incremental
             innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
-            arcname="$backupdir/inc-$(date +%Y-%m-%d_%H-%M-%S).$arctype.gz"
+            arcname="$backupdir/inc-$dirdate.$arctype.gz"
         fi
     fi
     if [ -n "$databases" ] && [ "$bktype" = "prepared-archive" ]; then innocommand=$innocommand" --databases=$databases"; fi
@@ -158,7 +160,32 @@ function backup_prepare {
         log_info "Archiving complete."
     fi
 }
-        
+
+# Function to build mysql command
+function mysqlcreate { 
+    mysql=$(command -v mysql)
+    mysqlcommand="$mysql"
+    mysqlcommand=$mysqlcommand" -u $backuphistuser"
+    mysqlcommand=$mysqlcommand" -p$backuphistpass"
+    mysqlcommand=$mysqlcommand" -h $backuphisthost"
+    [ ! -z "$backuphistport" ] && innocommand=$innocommand" -P $backuphistport"
+    mysqlcommand=$mysqlcommand" -Bse "
+}
+    
+# Function to write backup history to database
+function backup_history {
+    mysqlcreate
+    versioncommand=$mysqlcommand" \"SELECT @@version\" "
+    server_version=$(eval $versioncommand)
+    xtrabackup_version=$(eval $innobackupex -v) # Not working????
+    historyinsert=$(cat <<EOF 
+INSERT INTO $backuphistschema.mariadb_backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, galera, slave, threads, xtrabackup_version, server_version, innocommand, prepcommand)
+VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", "$innocommand", "$prepcommand")
+EOF
+)
+    $mysqlcommand "$historyinsert" >> "$logfile"
+}
+           
 # Function to cleanup old backups.
 function backup_cleanup {
     if [ $log_status = "SUCCEEDED" ] ; then
@@ -243,6 +270,8 @@ function debugme {
 ############################################
 # Begin script
 
+starttime=$(date +"%Y-%m-%d %H:%M:%S")
+
 # Set some specific variables
 mdate=$(date +%m/%d/%y)	# Date for mail subject. Not in function so set at script start time, not when backup is finished.
 logfile=$logpath/bgbackup_$(date +%Y-%m-%d-%T).log	# logfile
@@ -263,6 +292,8 @@ backer_upper # Execute the backup.
 
 backup_cleanup # Cleanup old backups. 
 
+endtime=$(date +"%Y-%m-%d %H:%M:%S")
+
 if [ "$log_status" = "FAILED" ] || [ "$mailonsuccess" = "yes" ] ; then
     mail_log # Mail results to maillist.
 fi
@@ -273,6 +304,8 @@ if [ "$log_status" = "SUCCEEDED" ] && [ ! -z "$run_after_success" ] ; then
 elif [ "$log_status" = "FAILED" ] && [ ! -z "$run_after_fail" ] ; then
     $run_after_fail # run the command if backup had failed
 fi
+
+backup_history
 
 if [ "$debug" = yes ] ; then
     debugme

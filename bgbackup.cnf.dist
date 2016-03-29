@@ -2,17 +2,32 @@
 
 # bgbackup configuration file
 
-# MySQL host (optional)
+# MariaDB host (optional)
 #host=127.0.0.1
 
-# MySQL host port (optional)
+# MariaDB host port (optional)
 #hostport=3306
 
-# MySQL backup username
+# MariaDB backup username
 backupuser=testuser
 
-# MySQL backup user password
+# MariaDB backup user password
 backuppass=testpass
+
+# MariaDB host for backup history
+backuphisthost=localhost
+
+# MariaDB port for backup history
+#backuphistport=3306
+
+# MariaDB user for backup history
+backuphistuser=mariadbbackup
+
+# MariaDB password for backup history
+backuphistpass=testpass
+
+# MariaDB schema for backup history
+backuphistschema=mdbutil
 
 # If server monitored by MONyog, should we disable alerts?                 
 monyog=no
@@ -50,8 +65,8 @@ verbose=no
 # Backup type (directory or archive)
 bktype=directory
 
-# Archive type (tar or xbstream)
-arctype=tar
+# Archive type (tar or xbstream) for archive backup type
+# arctype=tar
 
 # Used for parallel and compress
 threads=4
