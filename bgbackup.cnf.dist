@@ -2,22 +2,37 @@
 
 # bgbackup configuration file
 
-# MySQL host (optional)
+# MariaDB host (optional)
 #host=127.0.0.1
 
-# MySQL host port (optional)
+# MariaDB host port (optional)
 #hostport=3306
 
 # MySQL socket
 # socket=/var/lib/mysql/mysql.sock
 
-# MySQL backup username
+# MariaDB backup username
 backupuser=testuser
 
-# MySQL backup user password
+# MariaDB backup user password
 backuppass=testpass
 
-# If server monitored by MONyog, should we disable alerts?                 
+# MariaDB host for backup history
+backuphisthost=localhost
+
+# MariaDB port for backup history
+#backuphistport=3306
+
+# MariaDB user for backup history
+backuphistuser=mariadbbackup
+
+# MariaDB password for backup history
+backuphistpass=testpass
+
+# MariaDB schema for backup history
+backuphistschema=mdbutil
+
+# If server monitored by MONyog, should we disable alerts?
 monyog=no
 
 # The name of the server as setup in MONyog
@@ -29,7 +44,7 @@ monyoguser=
 # MONyog password
 monyogpass=
 
-# MONyog host/ip                 
+# MONyog host/ip
 monyoghost=
 
 # MONyog port
@@ -53,8 +68,8 @@ verbose=no
 # Backup type (directory or archive)
 bktype=directory
 
-# Archive type (tar or xbstream)
-arctype=tar
+# Archive type (tar or xbstream) for archive backup type
+# arctype=tar
 
 # Used for parallel and compress
 threads=4
@@ -78,7 +93,7 @@ computil=gzip
 # Include Galera info?
 galera=no
 
-# Include slave info? 
+# Include slave info?
 slave=no
 
 # Comma separated list of email address to be notified.
@@ -90,7 +105,7 @@ mailsubpre="[BGBackup]"
 # Email on success
 mailonsuccess=no
 
-# Run command(s) after backup, for example: run_on_success=/usr/local/bin/success.sh 
+# Run command(s) after backup, for example: run_on_success=/usr/local/bin/success.sh
 # (leave empty if you do not want to run anything)
 # If backup succedded
 run_after_success=
