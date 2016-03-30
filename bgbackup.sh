@@ -59,11 +59,12 @@ function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
     dirdate=$(date +%Y-%m-%d_%H-%M-%S)
-    mysqlcreate
     alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE DATE(starttime) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
     alreadyfull=$(eval $alreadyfullcmd)
+    anyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
+    anyfull=$(eval $anyfullcmd)
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
-         if ([ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ]) && [ "$alreadyfull" -eq 0 ] ; then
+         if (([ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ]) && [ "$alreadyfull" -eq 0 ] ) || [ "$anyfull" -eq 0 ] ; then
             butype=Full
             dirname="$backupdir/full-$dirdate"
             innocommand=$innocommand" $dirname --no-timestamp"
@@ -177,10 +178,40 @@ function mysqlcreate {
     [ ! -z "$backuphistport" ] && innocommand=$innocommand" -P $backuphistport"
     mysqlcommand=$mysqlcommand" -Bse "
 }
-    
+
+# Function to create mariadb_backup_history table if not exists
+function create_history_table {
+    createtable=$(cat <<EOF
+CREATE TABLE IF NOT EXISTS $backuphistschema.mariadb_backup_history (
+uuid varchar(40) NOT NULL,
+hostname varchar(100) DEFAULT NULL,
+starttime timestamp NULL DEFAULT NULL,
+endtime timestamp NULL DEFAULT NULL,
+backupdir varchar(255) DEFAULT NULL,
+logfile varchar(255) DEFAULT NULL,
+status varchar(25) DEFAULT NULL,
+butype varchar(20) DEFAULT NULL,
+bktype varchar(20) DEFAULT NULL,
+arctype varchar(20) DEFAULT NULL,
+compressed varchar(5) DEFAULT NULL,
+encrypted varchar(5) DEFAULT NULL,
+galera varchar(5) DEFAULT NULL,
+slave varchar(5) DEFAULT NULL,
+threads tinyint(2) DEFAULT NULL,
+xtrabackup_version varchar(50) DEFAULT NULL,
+server_version varchar(50) DEFAULT NULL,
+innocommand text DEFAULT NULL,
+prepcommand text DEFAULT NULL,
+deleted_at timestamp NULL DEFAULT NULL,
+PRIMARY KEY (uuid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+EOF
+)
+    $mysqlcommand "$createtable" >> $logfile
+}
+ 
 # Function to write backup history to database
 function backup_history {
-    mysqlcreate
     versioncommand=$mysqlcommand" \"SELECT @@version\" "
     server_version=$(eval $versioncommand)
     xtrabackup_version=$(eval $innobackupex -v) # Not working????
@@ -287,6 +318,10 @@ else
     mail_log
     exit
 fi
+
+mysqlcreate
+
+create_history_table
 
 config_check # Check vital configuration parameters
 
