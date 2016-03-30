@@ -59,25 +59,31 @@ function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
     dirdate=$(date +%Y-%m-%d_%H-%M-%S)
-    alreadyfull=($(ls -l "$backupdir" --time-style=+%Y-%m-%d | awk "/$(date +'%Y-%m-%d')/ {print \$7}" | grep full))
+    mysqlcreate
+    alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE DATE(starttime) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
+    alreadyfull=$(eval $alreadyfullcmd)
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
-         if ([ "$(date +%A)" = "$fullbackday" ] && [ -z "$alreadyfull" ]) || [ "$fullbackday" = "Always" ] ; then
+         if ([ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ]) && [ "$alreadyfull" -eq 0 ] ; then
             butype=Full
             dirname="$backupdir/full-$dirdate"
-            innocommand=$innocommand" $dirname --no-timestamp --history=$mhost"
+            innocommand=$innocommand" $dirname --no-timestamp"
         else
             butype=Incremental
+            incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
+            incbase=$(eval $incbasecmd)
             dirname="$backupdir/incr-$dirdate"
-            innocommand=$innocommand" $dirname --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+            innocommand=$innocommand" $dirname --no-timestamp --incremental --incremental-basedir=$incbase"
         fi
     elif [ "$bktype" = "archive" ] ; then
         if [ "$(date +%A)" = "$fullbackday" ] ; then
             butype=Full
-            innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost"
+            innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp"
             arcname="$backupdir/full-$dirdate.$arctype.gz"
         else
             butype=Incremental
-            innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --history=$mhost --incremental --incremental-history-name=$mhost"
+            incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
+            incbase=$(eval $incbasecmd)
+            innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --incremental --incremental-basedir=$incbase"
             arcname="$backupdir/inc-$dirdate.$arctype.gz"
         fi
     fi
@@ -187,31 +193,27 @@ EOF
 )
     $mysqlcommand "$historyinsert" >> "$logfile"
 }
-           
-# Function to cleanup old backups.
+
+# Function to cleanup backups.
 function backup_cleanup {
-    if [ $log_status = "SUCCEEDED" ] ; then
-        firstfulldel=$(find "$backupdir" -name 'full-*' -mtime +"$keepday" | sort -r | head -n 1)
-        if [ ${#firstfulldel[@]} -gt 1 ] ; then
-            deldate=$(stat -c %y "$firstfulldel" | awk '{print $1}')
-            declare -a TO_DELETE=($(find "$backupdir" -maxdepth 1 -name 'full*' -o -name 'incr*' -not -newermt "$deldate"))
-            if [ ${#TO_DELETE[@]} -gt 1 ] ; then
-                log_info "Beginning cleanup of old backups."
-                for d in "${TO_DELETE[@]}"
-                do
-                log_info "Deleted backup $d"
-                rm -Rf "${backupdir:?}"/"$d"
-                done
-                log_info "Backup cleanup complete."
-            else
-                log_info "No backups to clean."
-            fi
-        else 
-            log_info "No backups found older than $keepday days. No backups deleted at this time." 
-        fi
+  if [ $log_status = "SUCCEEDED" ]; then
+    limitoffset=$(expr $keepnum - 1)
+    delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+    delcount=$(eval $delcountcmd)
+    if [ "$delcount" -gt 0 ]; then
+      deletecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+      eval $deletecmd | while read -r deletedir; do
+        log_info "Deleted backup $deletedir"
+        markdeletedcmd=$mysqlcommand" \"UPDATE $backuphistschema.mariadb_backup_history SET deleted_at = NOW() WHERE backupdir = '$deletedir' AND hostname = '$mhost' AND status = 'SUCCEEDED' \" "
+        rm -Rf "$deletedir"
+        eval $markdeletedcmd
+      done
     else
-        log_info "Backup failed. No backups deleted at this time."
+      log_info "No backups to delete at this time."
     fi
+  else
+    log_info "Backup failed. No backups deleted at this time."
+  fi
 }
 
 # Function to check config parameters
