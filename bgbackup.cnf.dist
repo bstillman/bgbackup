@@ -47,11 +47,11 @@ monyoghost=
 # MONyog port
 monyogport=
 
-# Day of week to do full backup. Set to "Always" to always do a full backup.
-fullbackday=Always
+# Day of week to do full backup. Set to "Everyday" to do full backup everyday (subsequent daily backups will be incremental)
+fullbackday=Everyday
 
-# Minimum number of days to keep full backups
-keepday=10
+# Number of full backups to keep
+keepnum=2
 
 # Full path to backup directory root
 backupdir=/backups
