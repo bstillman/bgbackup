@@ -195,13 +195,12 @@ bktype varchar(20) DEFAULT NULL,
 arctype varchar(20) DEFAULT NULL,
 compressed varchar(5) DEFAULT NULL,
 encrypted varchar(5) DEFAULT NULL,
+cryptkey varchar(255) DEFAULT NULL,
 galera varchar(5) DEFAULT NULL,
 slave varchar(5) DEFAULT NULL,
 threads tinyint(2) DEFAULT NULL,
 xtrabackup_version varchar(50) DEFAULT NULL,
 server_version varchar(50) DEFAULT NULL,
-innocommand text DEFAULT NULL,
-prepcommand text DEFAULT NULL,
 deleted_at timestamp NULL DEFAULT NULL,
 PRIMARY KEY (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
@@ -216,8 +215,8 @@ function backup_history {
     server_version=$(eval $versioncommand)
     xtrabackup_version=$(eval $innobackupex -v) # Not working????
     historyinsert=$(cat <<EOF 
-INSERT INTO $backuphistschema.mariadb_backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, galera, slave, threads, xtrabackup_version, server_version, innocommand, prepcommand)
-VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", "$innocommand", "$prepcommand")
+INSERT INTO $backuphistschema.mariadb_backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, deleted_at)
+VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$cryptkey", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", 0)
 EOF
 )
     $mysqlcommand "$historyinsert" >> "$logfile"
