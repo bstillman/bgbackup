@@ -54,15 +54,45 @@ Optionally set external commands to be run after successful or failed backup, re
 
 ## Setup instructions
 
-Use the following to create the encryption key file: 
+Use the following to create the encryption key file: <br />
 ```
 echo -n $(openssl rand -base64 24) > /etc/my.cnf.d/backupscript.key
 ```
 
-Grant these permissions to the backup user  <br />
+Create the mdbutil database and mariadb_backup_history table: <br />
+```
+CREATE DATABASE mdbutil;
+
+CREATE TABLE mdbutil.mariadb_backup_history (
+  uuid varchar(40) NOT NULL,
+  hostname varchar(100) DEFAULT NULL,
+  starttime timestamp NULL DEFAULT NULL,
+  endtime timestamp NULL DEFAULT NULL,
+  backupdir varchar(255) DEFAULT NULL,
+  logfile varchar(255) DEFAULT NULL,
+  status varchar(25) DEFAULT NULL,
+  butype varchar(20) DEFAULT NULL,
+  bktype varchar(20) DEFAULT NULL,
+  arctype varchar(20) DEFAULT NULL,
+  compressed varchar(5) DEFAULT NULL,
+  encrypted varchar(5) DEFAULT NULL,
+  galera varchar(5) DEFAULT NULL,
+  slave varchar(5) DEFAULT NULL,
+  threads tinyint(2) DEFAULT NULL,
+  xtrabackup_version varchar(50) DEFAULT NULL,
+  server_version varchar(50) DEFAULT NULL,
+  innocommand text DEFAULT NULL,
+  prepcommand text DEFAULT NULL,
+  deleted_at timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (uuid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+```
+
+Grant these permissions to the backup user:  <br />
 ```
 GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'backup_user'@'localhost' IDENTIFIED BY 'backup_password';
-GRANT CREATE, INSERT, SELECT ON PERCONA_SCHEMA.* TO 'backup_user'@'localhost';
+GRANT ALL PRIVILEGES ON mdbutil.* TO 'backup_user'@'localhost';
 FLUSH PRIVILEGES; 
 ```
 
