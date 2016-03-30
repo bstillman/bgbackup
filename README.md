@@ -24,7 +24,7 @@ To disable incremental backups, set `fullbackday` to `Always`
 
 ### Emails
 
-Details about each backup are emailed to all email addresses listed in MAILLIST and also logged in the database (PERCONA_SCHEMA.xtrabackup_history) for easier monitoring in MONyog, Nagios, Cacti, etc.
+Details about each backup are emailed to all email addresses listed in MAILLIST and also logged in the database (mdbutil.mariadb_backup_history) for easier monitoring in MONyog, Nagios, Cacti, etc.
 
 ### Encryption
 
