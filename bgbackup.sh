@@ -122,7 +122,7 @@ function backer_upper {
             log_info "Enabling WSREP desync."
             mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
         else
-            log_info "WSREP desync is already enabled. Check for previous backup failure. Manually disable WSREP desync and rerun backup."
+            log_info "Fatal: WSREP desync is already enabled. Check for previous backup failure. Manually disable WSREP desync and rerun backup."
             log_status=FAILED
             mail_log
             exit
