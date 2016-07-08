@@ -100,18 +100,15 @@ function innocreate {
     if [ "$compress" = yes ] ; then innocommand=$innocommand" --compress --compress-threads=$threads" ; fi
     if [ "$encrypt" = yes ] ; then innocommand=$innocommand" --encrypt=AES256 --encrypt-key-file=$cryptkey" ; fi
 }
-
-# Function to decrypt xtrabackup_checkpoints 
-# Function to decrypt xtrabackup_checkpoints 
+# Function to decrypt xtrabackup_checkpoints
+# Function to decrypt xtrabackup_checkpoints
 function checkpointsdecrypt {
     xbcrypt -d --encrypt-key-file="$cryptkey" --encrypt-algo=AES256 < "$dirname"/xtrabackup_checkpoints.xbcrypt > "$dirname"/xtrabackup_checkpoints
 }
-
 # Function to disable/enable MONyog alerts
 function monyog {
     curl "${monyoghost}:${monyogport}/?_object=MONyogAPI&_action=Alerts&_value=${1}&_user=${monyoguser}&_password=${monyogpass}&_server=${monyogserver}"
 }
-
 # Function to do the backup
 function backer_upper {
     innocreate
@@ -121,14 +118,22 @@ function backer_upper {
         sleep 30
     fi
     if [ "$galera" = yes ] ; then
-        log_info "Enabling WSREP desync."
-        mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
+        desynccheck=$(mysql -u "$backupuser" -p"$backuppass" -ss -e "show global variables like 'wsrep_desync'" | awk '{ print $2 }')
+        if [ "$desynccheck" = "OFF" ] ; then
+            log_info "Enabling WSREP desync."
+            mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
+        else
+            log_info "WSREP desync is already enabled. Check for previous backup failure. Manually disable WSREP desync and rerun backup."
+            log_status=FAILED
+            mail_log
+            exit
+        fi
     fi
     log_info "Beginning ${butype} Backup"
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
         $innocommand 2>> "$logfile"
         log_check
-        if [ "$encrypt" = yes ] && [ "$log_status" = "SUCCEEDED" ] ; then 
+        if [ "$encrypt" = yes ] && [ "$log_status" = "SUCCEEDED" ] ; then
         checkpointsdecrypt
     fi
     fi
@@ -138,11 +143,13 @@ function backer_upper {
     fi
     if [ "$galera" = yes ] ; then
         log_info "Disabling WSREP desync."
-        queue=1
-        until [ "$queue" -eq 0 ]; do
         queue=$(mysql -u "$backupuser" -p"$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
-        sleep 10
-        done
+        if [ "$queue" -gt 0 ]; then
+            until [ "$queue" -eq 0 ] ; do
+                sleep 2
+                queue=$(mysql -u "$backupuser" -p"$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
+            done
+        fi
         mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=OFF;"
     fi
     if [ "$monyog" = yes ] ; then
@@ -154,7 +161,6 @@ function backer_upper {
     log_info "$butype backup $log_status"
     log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 }
-
 # Function to prepare backup
 function backup_prepare {
     if [ "$bktype" == "prepared-archive" ]; then
@@ -169,9 +175,8 @@ function backup_prepare {
         log_info "Archiving complete."
     fi
 }
-
 # Function to build mysql command
-function mysqlcreate { 
+function mysqlcreate {
     mysql=$(command -v mysql)
     mysqlcommand="$mysql"
     mysqlcommand=$mysqlcommand" -u $backuphistuser"
@@ -180,7 +185,6 @@ function mysqlcreate {
     [ ! -z "$backuphistport" ] && innocommand=$innocommand" -P $backuphistport"
     mysqlcommand=$mysqlcommand" -Bse "
 }
-
 # Function to create mariadb_backup_history table if not exists
 function create_history_table {
     createtable=$(cat <<EOF
@@ -201,7 +205,7 @@ cryptkey varchar(255) DEFAULT NULL,
 galera varchar(5) DEFAULT NULL,
 slave varchar(5) DEFAULT NULL,
 threads tinyint(2) DEFAULT NULL,
-xtrabackup_version varchar(50) DEFAULT NULL,
+xtrabackup_version varchar(150) DEFAULT NULL,
 server_version varchar(50) DEFAULT NULL,
 deleted_at timestamp NULL DEFAULT NULL,
 PRIMARY KEY (uuid)
@@ -210,20 +214,19 @@ EOF
 )
     $mysqlcommand "$createtable" >> $logfile
 }
- 
+
 # Function to write backup history to database
 function backup_history {
     versioncommand=$mysqlcommand" \"SELECT @@version\" "
     server_version=$(eval $versioncommand)
-    xtrabackup_version=$(eval $innobackupex -v) # Not working????
-    historyinsert=$(cat <<EOF 
+    xtrabackup_version=$(cat "$logfile" | grep "/usr/bin/innobackupex version")
+    historyinsert=$(cat <<EOF
 INSERT INTO $backuphistschema.mariadb_backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, deleted_at)
 VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$cryptkey", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", 0)
 EOF
 )
     $mysqlcommand "$historyinsert" >> "$logfile"
 }
-
 # Function to cleanup backups.
 function backup_cleanup {
   if [ $log_status = "SUCCEEDED" ]; then
@@ -245,7 +248,6 @@ function backup_cleanup {
     log_info "Backup failed. No backups deleted at this time."
   fi
 }
-
 # Function to check config parameters
 function config_check {
     if [[ "$bktype" = "archive" || "$bktype" = "prepared-archive" ]] && [ "$compress" = "yes" ] ; then
@@ -258,7 +260,6 @@ function config_check {
         exit 1
     fi
 }
-
 # Debug variables function
 function debugme {
     echo "host: " "$host"
@@ -291,7 +292,7 @@ function debugme {
     echo "queue: " "$queue"
     echo "butype: " "$butype"
     echo "log_status: " "$log_status"
-    echo "budirdate: " "$budirdate"	
+    echo "budirdate: " "$budirdate"
     echo "innocommand: " "$innocommand"
     echo "prepcommand: " "$prepcommand"
     echo "dirname: " "$dirname"
@@ -300,16 +301,12 @@ function debugme {
     echo "run_after_success: " "$run_after_success"
     echo "run_after_fail: " "$run_after_fail"
 }
-
 ############################################
 # Begin script
-
 starttime=$(date +"%Y-%m-%d %H:%M:%S")
-
 # Set some specific variables
 mdate=$(date +%m/%d/%y)	# Date for mail subject. Not in function so set at script start time, not when backup is finished.
 logfile=$logpath/bgbackup_$(date +%Y-%m-%d-%T).log	# logfile
-
 # Check for xtrabackup
 if command -v innobackupex >/dev/null; then
     innobackupex=$(command -v innobackupex)
@@ -319,34 +316,23 @@ else
     mail_log
     exit
 fi
-
 mysqlcreate
-
 create_history_table
-
 config_check # Check vital configuration parameters
-
-backer_upper # Execute the backup. 
-
-backup_cleanup # Cleanup old backups. 
-
+backer_upper # Execute the backup.
+backup_cleanup # Cleanup old backups.
 endtime=$(date +"%Y-%m-%d %H:%M:%S")
-
 if [ "$log_status" = "FAILED" ] || [ "$mailonsuccess" = "yes" ] ; then
     mail_log # Mail results to maillist.
 fi
-
 # run commands after backup, eventually
 if [ "$log_status" = "SUCCEEDED" ] && [ ! -z "$run_after_success" ] ; then
     $run_after_success # run the command if backup was successful
 elif [ "$log_status" = "FAILED" ] && [ ! -z "$run_after_fail" ] ; then
     $run_after_fail # run the command if backup had failed
 fi
-
 backup_history
-
 if [ "$debug" = yes ] ; then
     debugme
 fi
-
 exit
