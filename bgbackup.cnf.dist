@@ -50,6 +50,9 @@ monyogport=
 # Day of week to do full backup. Set to "Everyday" to do full backup everyday (subsequent daily backups will be incremental)
 fullbackday=Everyday
 
+# Differential does incremental backup based on the last full backup instead of last full or incremental
+differential=no
+
 # Number of full backups to keep
 keepnum=2
 
