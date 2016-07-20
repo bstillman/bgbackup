@@ -71,19 +71,19 @@ Use the following to create the encryption key file: <br />
 echo -n $(openssl rand -base64 24) > /etc/my.cnf.d/backupscript.key
 ```
 
-Create the MDB Utilities schema/database: <br />
+Create the MDB Utilities schema/database (replace backuphistschema with the value of `backuphistschema`): <br />
 ```
 CREATE DATABASE backuphistschema;
 ```
 
-Create the backup user:  <br />
+Create the backup user (change backupuser to the value of `backupuser`, backuppass to the value of `backuppass`, and backuphistschema to the value of `backuphistschema`):  <br />
 ```
-GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'bgbackup'@'localhost' IDENTIFIED BY 'your_password_here';
-GRANT ALL PRIVILEGES ON backuphistschema.* TO 'backup_user'@'localhost';
+GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'backupuser'@'localhost' IDENTIFIED BY 'backuppass';
+GRANT ALL PRIVILEGES ON backuphistschema.* TO 'backupuser'@'localhost';
 FLUSH PRIVILEGES; 
 ```
 
-Add this info to bottom of /etc/my.cnf (MySQL) or new /etc/my.cnf.d/xtrabackup.cnf (MariaDB): <br />
+Add this info to bottom of /etc/my.cnf (MySQL) or new /etc/my.cnf.d/xtrabackup.cnf (MariaDB) (change the paths to your paths): <br />
 ```
 [xtrabackup]
 port = 3306
@@ -92,7 +92,7 @@ datadir = /path/to/datadir
 innodb_data_home_dir = /path/to/innodb_data_home_dir
 ```
 
-Lock down permissions on config file(s)  <br />
+Lock down permissions on config file(s) (changing the paths as necessary): <br />
 ```
 chown mysql /etc/my.cnf
 chmod 600 /etc/my.cnf
@@ -103,6 +103,6 @@ chmod 600 /etc/my.cnf.d/xtrabackup.cnf
 chown mysql /etc/my.cnf.d/backupscript.key
 chmod 600 /etc/my.cnf.d/backupscript.key
 
-chown mysql /PATH/TO/bgbackup.cnf
-chmod 600 /PATH/TO/bgbackup.cnf
+chown mysql /etc/bgbackup.cnf
+chmod 600 /etc/bgbackup.cnf
 ```
