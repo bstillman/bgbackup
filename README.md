@@ -22,6 +22,14 @@ Set `fullbackday` to the day you would like full backups taken. The first backup
 
 To disable incremental/differential backups and have every run be a full backup, set `fullbackday` to `Always`
 
+### Incremental or Differential
+
+Incremental backups contain only the changed data since the last successful full or incremental backup. While the size of each incremental is smaller than a differential, the time to restore is longer. Each incremental needs to be applied in reverse order to the previous incremental until reaching the full backup. 
+
+Differential backups contain the changed data since the last successful full backup. The size of the differentials grow, but the time to restore is less than incrementals. Only the last successful differential needs applied to the last successful full backup. 
+
+Incremental backups are performed by default. To enable differential backups, set `differential=yes`.  
+
 ### Emails
 
 Details about all backups are emailed to all email addresses listed in MAILLIST if `mailonsuccess` is enabled. Otherwise, only details about failed backups are emailed. 
