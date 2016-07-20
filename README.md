@@ -18,13 +18,17 @@ The backups are done with xtrabackup/innobackupex. bgbackup supports multiple ba
  
 ### Scheduling
 
-Backups ran on `fullbackday` will be full backups. Backups ran on other days will be incremental. 
+Set `fullbackday` to the day you would like full backups taken. The first backup of `fullbackday` will be full backups. All subsequent backups (including backups taken later the same day) will be incremental or differential based on the setting `differential`. 
 
-To disable incremental backups, set `fullbackday` to `Always`
+To disable incremental/differential backups and have every run be a full backup, set `fullbackday` to `Always`
 
 ### Emails
 
-Details about each backup are emailed to all email addresses listed in MAILLIST and also logged in the database (mdbutil.mariadb_backup_history) for easier monitoring in MONyog, Nagios, Cacti, etc.
+Details about all backups are emailed to all email addresses listed in MAILLIST if `mailonsuccess` is enabled. Otherwise, only details about failed backups are emailed. 
+
+### Backup History
+
+Details about each backup are logged in the database (`backuphistschema`.mariadb_backup_history) for easier monitoring in MONyog, Nagios, Cacti, etc. This table is also used by innobackupex to find the backup base directory for incremental and differential backups. 
 
 ### Encryption
 
@@ -59,10 +63,15 @@ Use the following to create the encryption key file: <br />
 echo -n $(openssl rand -base64 24) > /etc/my.cnf.d/backupscript.key
 ```
 
-Grant these permissions to the backup user:  <br />
+Create the MDB Utilities schema/database: <br />
 ```
-GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'backup_user'@'localhost' IDENTIFIED BY 'backup_password';
-GRANT ALL PRIVILEGES ON mdbutil.* TO 'backup_user'@'localhost';
+CREATE DATABASE `backuphistschema`;
+```
+
+Create the backup user:  <br />
+```
+GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'bgbackup'@'localhost' IDENTIFIED BY 'your_password_here';
+GRANT ALL PRIVILEGES ON `backuphistschema`.* TO 'backup_user'@'localhost';
 FLUSH PRIVILEGES; 
 ```
 
