@@ -65,13 +65,13 @@ echo -n $(openssl rand -base64 24) > /etc/my.cnf.d/backupscript.key
 
 Create the MDB Utilities schema/database: <br />
 ```
-CREATE DATABASE `backuphistschema`;
+CREATE DATABASE backuphistschema;
 ```
 
 Create the backup user:  <br />
 ```
 GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'bgbackup'@'localhost' IDENTIFIED BY 'your_password_here';
-GRANT ALL PRIVILEGES ON `backuphistschema`.* TO 'backup_user'@'localhost';
+GRANT ALL PRIVILEGES ON backuphistschema.* TO 'backup_user'@'localhost';
 FLUSH PRIVILEGES; 
 ```
 
