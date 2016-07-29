@@ -110,7 +110,6 @@ function innocreate {
 }
 
 # Function to decrypt xtrabackup_checkpoints
-# Function to decrypt xtrabackup_checkpoints
 function checkpointsdecrypt {
     xbcrypt -d --encrypt-key-file="$cryptkey" --encrypt-algo=AES256 < "$dirname"/xtrabackup_checkpoints.xbcrypt > "$dirname"/xtrabackup_checkpoints
 }
@@ -147,8 +146,8 @@ function backer_upper {
     if [ "$galera" = yes ] ; then
         log_info "Disabling WSREP desync."
         until [ "$queue" -eq 0 ]; do
-        queue=$(mysql -u "$backupuser" -p"$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
-        sleep 10
+            queue=$(mysql -u "$backupuser" -p"$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
+            sleep 10
         done
         mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=OFF;"
     fi
@@ -186,6 +185,18 @@ function mysqlcreate {
     mysqlcommand=$mysqlcommand" -h $backuphisthost"
     [ ! -z "$backuphistport" ] && innocommand=$innocommand" -P $backuphistport"
     mysqlcommand=$mysqlcommand" -Bse "
+}
+
+# Function to build mysqldump command 
+function mysqldumpcreate {
+    mysqldump=$(command -v mysqldump)
+    mysqldumpcommand="$mysqldump"
+    mysqldumpcommand=$mysqldumpcommand" -u $backuphistuser"
+    mysqldumpcommand=$mysqldumpcommand" -p$backuphistpass"
+    mysqldumpcommand=$mysqldumpcommand" -h $backuphisthost"
+    [ ! -z "$backuphistport" ] && innocommand=$innocommand" -P $backuphistport"
+    mysqldumpcommand=$mysqldumpcommand" $backuphistschema"
+    mysqldumpcommand=$mysqldumpcommand" mariadb_backup_history"
 }
 
 # Function to create mariadb_backup_history table if not exists
@@ -233,24 +244,34 @@ EOF
 
 # Function to cleanup backups.
 function backup_cleanup {
-  if [ $log_status = "SUCCEEDED" ]; then
-    limitoffset=$(expr $keepnum - 1)
-    delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
-    delcount=$(eval $delcountcmd)
-    if [ "$delcount" -gt 0 ]; then
-      deletecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
-      eval $deletecmd | while read -r deletedir; do
-        log_info "Deleted backup $deletedir"
-        markdeletedcmd=$mysqlcommand" \"UPDATE $backuphistschema.mariadb_backup_history SET deleted_at = NOW() WHERE backupdir = '$deletedir' AND hostname = '$mhost' AND status = 'SUCCEEDED' \" "
-        rm -Rf "$deletedir"
-        eval $markdeletedcmd
-      done
+    if [ $log_status = "SUCCEEDED" ]; then
+        limitoffset=$(expr $keepnum - 1)
+        delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+        delcount=$(eval $delcountcmd)
+        if [ "$delcount" -gt 0 ]; then
+            deletecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+            eval $deletecmd | while read -r deletedir; do
+                log_info "Deleted backup $deletedir"
+                markdeletedcmd=$mysqlcommand" \"UPDATE $backuphistschema.mariadb_backup_history SET deleted_at = NOW() WHERE backupdir = '$deletedir' AND hostname = '$mhost' AND status = 'SUCCEEDED' \" "
+                rm -Rf "$deletedir"
+                eval $markdeletedcmd
+            done
+        else
+            log_info "No backups to delete at this time."
+        fi
     else
-      log_info "No backups to delete at this time."
+        log_info "Backup failed. No backups deleted at this time."
     fi
-  else
-    log_info "Backup failed. No backups deleted at this time."
-  fi
+}
+
+# Function to dump mdbutil schema
+function mdbutil_backup {
+    if [ $log_status = "SUCCEEDED" ]; then
+        mysqldumpcreate
+        mdbutildumpfile="$dirname"/"$backuphistschema".mariadb_backup_history.sql
+        $mysqldumpcommand > "$mdbutildumpfile"
+        log_info "$backuphistschema dumped to $mdbutildumpfile"
+    fi
 }
 
 # Function to check config parameters
@@ -351,6 +372,8 @@ elif [ "$log_status" = "FAILED" ] && [ ! -z "$run_after_fail" ] ; then
 fi
 
 backup_history
+
+mdbutil_backup
 
 if [ "$debug" = yes ] ; then
     debugme
