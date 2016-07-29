@@ -200,8 +200,9 @@ cryptkey varchar(255) DEFAULT NULL,
 galera varchar(5) DEFAULT NULL,
 slave varchar(5) DEFAULT NULL,
 threads tinyint(2) DEFAULT NULL,
-xtrabackup_version varchar(50) DEFAULT NULL,
+xtrabackup_version varchar(120) DEFAULT NULL,
 server_version varchar(50) DEFAULT NULL,
+backup_size varchar(20) DEFAULT NULL,
 deleted_at timestamp NULL DEFAULT NULL,
 PRIMARY KEY (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
@@ -214,10 +215,11 @@ EOF
 function backup_history {
     versioncommand=$mysqlcommand" \"SELECT @@version\" "
     server_version=$(eval "$versioncommand")
-    xtrabackup_version=$(eval "$innobackupex" -v) # Not working????
+    xtrabackup_version=$(cat "$logfile" | grep "/usr/bin/innobackupex version")
+    backup_size=$(du -sm "$dirname" | awk '{ print $1 }')"M"
     historyinsert=$(cat <<EOF
-INSERT INTO $backuphistschema.mariadb_backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, deleted_at)
-VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$cryptkey", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", 0)
+INSERT INTO $backuphistschema.mariadb_backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, backup_size, deleted_at)
+VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$cryptkey", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", "$backup_size", 0)
 EOF
 )
     $mysqlcommand "$historyinsert"
@@ -228,6 +230,9 @@ EOF
     else
         echo "Backup history database record NOT inserted successfully!"
         log_info "Backup history database record NOT inserted successfully!"
+        log_status=FAILED
+        mail_log
+        exit 1
     fi
 }
 
@@ -272,6 +277,8 @@ function config_check {
     if [[ "$computil" != "gzip" && "$computil" != "pigz" ]]; then
         verbose="yes"
         log_info "Fatal: $computil compression method is unsupported."
+        log_status=FAILED
+        mail_log
         exit 1
     fi
 }
@@ -324,37 +331,40 @@ function debugme {
 # find and source the config file
 etccnf=$( find /etc -name bgbackup.cnf )
 scriptdir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-
 if [ -e "$etccnf" ]; then
     source "$etccnf"
 elif [ -e "$scriptdir"/bgbackup.cnf ]; then
     source "$scriptdir"/bgbackup.cnf
 else
-    echo "Error: bgbackup.cnf configuration file not found"
-    echo "The configuration file must exist somewhere in /etc or"
-    echo "in the same directory where the script is located"
+    log_info "Error: bgbackup.cnf configuration file not found"
+    log_info "The configuration file must exist somewhere in /etc or"
+    log_info "in the same directory where the script is located"
+    log_status=FAILED
+    mail_log
     exit 1
 fi
 
 # verify the backup directory exists
 if [ ! -d "$backupdir" ]
 then
-    echo "Error: $backupdir directory not found"
-    echo "The configured directory for backups does not exist. Please create this first."
+    log_info "Error: $backupdir directory not found"
+    log_info "The configured directory for backups does not exist. Please create this first."
+    log_status=FAILED
+    mail_log
     exit 1
 fi
 
 # verify user running script has permissions needed to write to backup directory
 if [ ! -w "$backupdir" ]; then 
-    echo "Error: $backupdir directory is not writable."
-    echo "Verify the user running this script has write access to the configured backup directory."
+    log_info "Error: $backupdir directory is not writable."
+    log_info "Verify the user running this script has write access to the configured backup directory."
+    log_status=FAILED
+    mail_log
     exit 1
 fi
 
-# set starttime
-starttime=$(date +"%Y-%m-%d %H:%M:%S")
-
 # Set some specific variables
+starttime=$(date +"%Y-%m-%d %H:%M:%S")
 mdate=$(date +%m/%d/%y)    # Date for mail subject. Not in function so set at script start time, not when backup is finished.
 logfile=$logpath/bgbackup_$(date +%Y-%m-%d-%T).log    # logfile
 
@@ -365,7 +375,7 @@ else
     log_info "xtrabackup/innobackupex does not appear to be installed. Please install and try again."
     log_status=FAILED
     mail_log
-    exit
+    exit 1
 fi
 
 mysqlcreate
