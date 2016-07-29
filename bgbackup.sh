@@ -245,7 +245,7 @@ EOF
 # Function to cleanup backups.
 function backup_cleanup {
     if [ $log_status = "SUCCEEDED" ]; then
-        limitoffset=$(expr "$keepnum" - 1)
+        limitoffset=$((keepnum-1))
         delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
         delcount=$(eval "$delcountcmd")
         if [ "$delcount" -gt 0 ]; then
