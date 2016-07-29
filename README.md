@@ -106,3 +106,12 @@ chmod 600 /etc/my.cnf.d/backupscript.key
 chown mysql /etc/bgbackup.cnf
 chmod 600 /etc/bgbackup.cnf
 ```
+
+## Important upgrade notes
+
+The mariadb_backup_history table DDL has changed. If upgrading from a previous version of the mdbutil-tracker branch of bgbackup, check the DDL of your existing table. The latest version of this script changes xtrabackup_version to VARCHAR(120), and adds the column backup_size. A future version will add a schema check/fix. 
+
+```
+ALTER TABLE mariadb_backup_history MODIFY xtrabackup_version VARCHAR(120);
+ALTER TABLE mariadb_backup_history ADD backup_size VARCHAR(20) NOT NULL AFTER server_version;
+```
