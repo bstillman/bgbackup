@@ -1,4 +1,4 @@
-# bgbackup
+# bgbackup : mdbutil-tracker
 
 bgbackup is a MySQL ecosystem wrapper script for setting up a daily database backup routine. It can be configured to run different types of backups, and send a status email upon completion.
 
