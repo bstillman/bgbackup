@@ -64,7 +64,7 @@ function innocreate {
     anyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
     anyfull=$(eval $anyfullcmd)
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
-         if (([ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ]) && [ "$alreadyfull" -eq 0 ] ) || [ "$anyfull" -eq 0 ] ; then
+        if (([ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ]) && [ "$alreadyfull" -eq 0 ] ) || [ "$anyfull" -eq 0 ] ; then
             butype=Full
             dirname="$backupdir/full-$dirdate"
             innocommand=$innocommand" $dirname --no-timestamp"
