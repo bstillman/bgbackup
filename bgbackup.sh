@@ -60,11 +60,11 @@ function innocreate {
     innocommand="$innobackupex"
     dirdate=$(date +%Y-%m-%d_%H-%M-%S)
     alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE DATE(starttime) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
-    alreadyfull=$(eval $alreadyfullcmd)
+    alreadyfull=$(eval "$alreadyfullcmd")
     anyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
-    anyfull=$(eval $anyfullcmd)
+    anyfull=$(eval "$anyfullcmd")
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
-        if (([ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ]) && [ "$alreadyfull" -eq 0 ] ) || [ "$anyfull" -eq 0 ] ; then
+        if ( ( [ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ]) && [ "$alreadyfull" -eq 0 ] ) || [ "$anyfull" -eq 0 ] ; then
             butype=Full
             dirname="$backupdir/full-$dirdate"
             innocommand=$innocommand" $dirname --no-timestamp"
@@ -72,13 +72,13 @@ function innocreate {
             if [ "$differential" = yes ] ; then
                 butype=Differential
                 diffbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND butype = 'Full' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
-                diffbase=$(eval $diffbasecmd)
+                diffbase=$(eval "$diffbasecmd")
                 dirname="$backupdir/diff-$dirdate"
                 innocommand=$innocommand" $dirname --no-timestamp --incremental --incremental-basedir=$diffbase"
             else
                 butype=Incremental
                 incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
-                incbase=$(eval $incbasecmd)
+                incbase=$(eval "$incbasecmd")
                 dirname="$backupdir/incr-$dirdate"
                 innocommand=$innocommand" $dirname --no-timestamp --incremental --incremental-basedir=$incbase"
             fi
@@ -91,7 +91,7 @@ function innocreate {
         else
             butype=Incremental
             incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
-            incbase=$(eval $incbasecmd)
+            incbase=$(eval "$incbasecmd")
             innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --incremental --incremental-basedir=$incbase"
             arcname="$backupdir/inc-$dirdate.$arctype.gz"
         fi
@@ -226,14 +226,14 @@ PRIMARY KEY (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 EOF
 )
-    $mysqlcommand "$createtable" >> $logfile
+    $mysqlcommand "$createtable" >> "$logfile"
 }
 
 # Function to write backup history to database
 function backup_history {
     versioncommand=$mysqlcommand" \"SELECT @@version\" "
-    server_version=$(eval $versioncommand)
-    xtrabackup_version=$(eval $innobackupex -v) # Not working????
+    server_version=$(eval "$versioncommand")
+    xtrabackup_version=$(eval "$innobackupex" -v) # Not working????
     historyinsert=$(cat <<EOF
 INSERT INTO $backuphistschema.mariadb_backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, deleted_at)
 VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$cryptkey", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", 0)
@@ -245,16 +245,16 @@ EOF
 # Function to cleanup backups.
 function backup_cleanup {
     if [ $log_status = "SUCCEEDED" ]; then
-        limitoffset=$(expr $keepnum - 1)
+        limitoffset=$(expr "$keepnum" - 1)
         delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
-        delcount=$(eval $delcountcmd)
+        delcount=$(eval "$delcountcmd")
         if [ "$delcount" -gt 0 ]; then
             deletecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
-            eval $deletecmd | while read -r deletedir; do
+            eval "$deletecmd" | while read -r deletedir; do
                 log_info "Deleted backup $deletedir"
                 markdeletedcmd=$mysqlcommand" \"UPDATE $backuphistschema.mariadb_backup_history SET deleted_at = NOW() WHERE backupdir = '$deletedir' AND hostname = '$mhost' AND status = 'SUCCEEDED' \" "
                 rm -Rf "$deletedir"
-                eval $markdeletedcmd
+                eval "$markdeletedcmd"
             done
         else
             log_info "No backups to delete at this time."
@@ -360,6 +360,10 @@ backup_cleanup # Cleanup old backups.
 
 endtime=$(date +"%Y-%m-%d %H:%M:%S")
 
+backup_history
+
+mdbutil_backup
+
 if [ "$log_status" = "FAILED" ] || [ "$mailonsuccess" = "yes" ] ; then
     mail_log # Mail results to maillist.
 fi
@@ -370,10 +374,6 @@ if [ "$log_status" = "SUCCEEDED" ] && [ ! -z "$run_after_success" ] ; then
 elif [ "$log_status" = "FAILED" ] && [ ! -z "$run_after_fail" ] ; then
     $run_after_fail # run the command if backup had failed
 fi
-
-backup_history
-
-mdbutil_backup
 
 if [ "$debug" = yes ] ; then
     debugme
