@@ -270,7 +270,7 @@ function mdbutil_backup {
         mysqldumpcreate
         mdbutildumpfile="$dirname"/"$backuphistschema".mariadb_backup_history.sql
         $mysqldumpcommand > "$mdbutildumpfile"
-        log_info "$backuphistschema dumped to $mdbutildumpfile"
+        log_info "Backup history table dumped to $mdbutildumpfile"
     fi
 }
 
