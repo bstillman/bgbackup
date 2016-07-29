@@ -8,25 +8,6 @@
 # As an additional term ALL code must carry the original Author(s) credit in comment form.
 # See LICENSE in this directory for the integral text.
 
-etccnf=$( find /etc -name bgbackup.cnf )
-scriptdir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-if [ -e "$etccnf" ]; then
-    source "$etccnf"
-elif [ -e "$scriptdir"/bgbackup.cnf ]; then
-    source "$scriptdir"/bgbackup.cnf
-else
-    echo "Error: bgbackup.cnf configuration file not found"
-    echo "The configuration file must exist somewhere in /etc or"
-    echo "in the same directory where the script is located"
-    exit 1
-fi
-
-if [ ! -d "$backupdir" ]
-then
-    echo "Error: $backupdir directory not found"
-    echo "The configured directory for backups does not exist. Please create this first"
-    exit 1
-fi
 
 
 # Functions
@@ -239,7 +220,15 @@ INSERT INTO $backuphistschema.mariadb_backup_history (uuid, hostname, starttime,
 VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$cryptkey", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", 0)
 EOF
 )
-    $mysqlcommand "$historyinsert" >> "$logfile"
+    $mysqlcommand "$historyinsert"
+    #verify insert
+    verifyinsert=$($mysqlcommand "select count(*) from $backuphistschema.mariadb_backup_history where hostname='$mhost' and endtime='$endtime'")
+    if [ "$verifyinsert" -eq 1 ]; then
+        log_info "Backup history database record inserted successfully."
+    else
+        echo "Backup history database record NOT inserted successfully!"
+        log_info "Backup history database record NOT inserted successfully!"
+    fi
 }
 
 # Function to cleanup backups.
@@ -332,6 +321,37 @@ function debugme {
 ############################################
 # Begin script
 
+# find and source the config file
+etccnf=$( find /etc -name bgbackup.cnf )
+scriptdir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+if [ -e "$etccnf" ]; then
+    source "$etccnf"
+elif [ -e "$scriptdir"/bgbackup.cnf ]; then
+    source "$scriptdir"/bgbackup.cnf
+else
+    echo "Error: bgbackup.cnf configuration file not found"
+    echo "The configuration file must exist somewhere in /etc or"
+    echo "in the same directory where the script is located"
+    exit 1
+fi
+
+# verify the backup directory exists
+if [ ! -d "$backupdir" ]
+then
+    echo "Error: $backupdir directory not found"
+    echo "The configured directory for backups does not exist. Please create this first."
+    exit 1
+fi
+
+# verify user running script has permissions needed to write to backup directory
+if [ ! -w "$backupdir" ]; then 
+    echo "Error: $backupdir directory is not writable."
+    echo "Verify the user running this script has write access to the configured backup directory."
+    exit 1
+fi
+
+# set starttime
 starttime=$(date +"%Y-%m-%d %H:%M:%S")
 
 # Set some specific variables
