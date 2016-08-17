@@ -125,6 +125,7 @@ function backer_upper {
     fi
     if [ "$galera" = yes ] ; then
         log_info "Disabling WSREP desync."
+        queue=1
         until [ "$queue" -eq 0 ]; do
             queue=$(mysql -u "$backupuser" -p"$backuppass" -ss -e "show global status like 'wsrep_local_recv_queue';" | awk '{ print $2 }')
             sleep 10
