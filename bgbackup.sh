@@ -82,6 +82,7 @@ function innocreate {
     if [ -n "$databases" ] && [ "$bktype" = "prepared-archive" ]; then innocommand=$innocommand" --databases=$databases"; fi
     [ ! -z "$backupuser" ] && innocommand=$innocommand" --user=$backupuser"
     [ ! -z "$backuppass" ] && innocommand=$innocommand" --password=$backuppass"
+    [ ! -z "$socket" ] && innocommand=$innocommand" --socket=$socket"
     [ ! -z "$host" ] && innocommand=$innocommand" --host=$host"
     [ ! -z "$hostport" ] && innocommand=$innocommand" --port=$hostport"
     if [ "$galera" = yes ] ; then innocommand=$innocommand" --galera-info" ; fi
