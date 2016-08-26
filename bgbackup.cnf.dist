@@ -8,6 +8,9 @@
 # MySQL host port (optional)
 #hostport=3306
 
+# MySQL socket
+# socket=/var/lib/mysql/mysql.sock
+
 # MySQL backup username
 backupuser=testuser
 
