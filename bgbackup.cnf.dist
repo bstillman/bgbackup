@@ -75,6 +75,9 @@ logpath=/var/log
 # Log verbosity
 verbose=no
 
+# Log to syslog
+syslog=no
+
 # Backup type (directory or archive)
 bktype=directory
 
