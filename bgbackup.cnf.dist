@@ -2,6 +2,13 @@
 
 # bgbackup configuration file
 
+# Check for Percona backup history records to migrate?
+# If yes, be warned that backups which meet the current
+# delete threshold will be deleted. Backups which have
+# already been deleted will be marked with deleted_at
+# as today's date.
+checkmigrate=no
+
 # MariaDB host (optional)
 #host=127.0.0.1
 
