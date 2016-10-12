@@ -40,7 +40,7 @@ function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
     dirdate=$(date +%Y-%m-%d_%H-%M-%S)
-    alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE DATE(starttime) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
+    alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE DATE(start_time) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
     alreadyfull=$(eval "$alreadyfullcmd")
     anyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
     anyfull=$(eval "$anyfullcmd")
@@ -52,13 +52,13 @@ function innocreate {
         else
             if [ "$differential" = yes ] ; then
                 butype=Differential
-                diffbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND butype = 'Full' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
+                diffbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND butype = 'Full' AND deleted_at = 0 ORDER BY start_time DESC LIMIT 1\" "
                 diffbase=$(eval "$diffbasecmd")
                 dirname="$backupdir/diff-$dirdate"
                 innocommand=$innocommand" $dirname --no-timestamp --incremental --incremental-basedir=$diffbase"
             else
                 butype=Incremental
-                incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
+                incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY start_time DESC LIMIT 1\" "
                 incbase=$(eval "$incbasecmd")
                 dirname="$backupdir/incr-$dirdate"
                 innocommand=$innocommand" $dirname --no-timestamp --incremental --incremental-basedir=$incbase"
@@ -71,7 +71,7 @@ function innocreate {
             arcname="$backupdir/full-$dirdate.$arctype.gz"
         else
             butype=Incremental
-            incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
+            incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY start_time DESC LIMIT 1\" "
             incbase=$(eval "$incbasecmd")
             innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --incremental --incremental-basedir=$incbase"
             arcname="$backupdir/inc-$dirdate.$arctype.gz"
@@ -186,8 +186,8 @@ function create_history_table {
 CREATE TABLE IF NOT EXISTS $backuphistschema.backup_history (
 uuid varchar(40) NOT NULL,
 hostname varchar(100) DEFAULT NULL,
-starttime timestamp NULL DEFAULT NULL,
-endtime timestamp NULL DEFAULT NULL,
+start_time timestamp NULL DEFAULT NULL,
+end_time timestamp NULL DEFAULT NULL,
 backupdir varchar(255) DEFAULT NULL,
 logfile varchar(255) DEFAULT NULL,
 status varchar(25) DEFAULT NULL,
@@ -228,8 +228,8 @@ function migrate {
 INSERT INTO $backuphistschema.backup_history (
   uuid, 
   hostname, 
-  starttime,
-  endtime, 
+  start_time,
+  end_time, 
   backupdir, 
   status, 
   butype, 
@@ -290,13 +290,13 @@ function backup_history {
     xtrabackup_version=$(cat "$logfile" | grep "/usr/bin/innobackupex version")
     backup_size=$(du -sm "$dirname" | awk '{ print $1 }')"M"
     historyinsert=$(cat <<EOF
-INSERT INTO $backuphistschema.backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, backup_size, deleted_at)
+INSERT INTO $backuphistschema.backup_history (uuid, hostname, start_time, end_time, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, backup_size, deleted_at)
 VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$cryptkey", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", "$backup_size", 0)
 EOF
 )
     $mysqlcommand "$historyinsert"
     #verify insert
-    verifyinsert=$($mysqlcommand "select count(*) from $backuphistschema.backup_history where hostname='$mhost' and endtime='$endtime'")
+    verifyinsert=$($mysqlcommand "select count(*) from $backuphistschema.backup_history where hostname='$mhost' and end_time='$endtime'")
     if [ "$verifyinsert" -eq 1 ]; then
         log_info "Backup history database record inserted successfully."
     else
@@ -312,10 +312,10 @@ EOF
 function backup_cleanup {
     if [ $log_status = "SUCCEEDED" ]; then
         limitoffset=$((keepnum-1))
-        delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+        delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE start_time < (SELECT start_time FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY start_time DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
         delcount=$(eval "$delcountcmd")
         if [ "$delcount" -gt 0 ]; then
-            deletecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+            deletecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE start_time < (SELECT start_time FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY start_time DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
             eval "$deletecmd" | while read -r deletedir; do
                 log_info "Deleted backup $deletedir"
                 markdeletedcmd=$mysqlcommand" \"UPDATE $backuphistschema.backup_history SET deleted_at = NOW() WHERE backupdir = '$deletedir' AND hostname = '$mhost' AND status = 'SUCCEEDED' \" "
