@@ -115,8 +115,8 @@ maillist=ben@mariadb.com,guillaume@mariadb.com
 # Email subject prefix
 mailsubpre="[BGBackup]"
 
-# Email on success
-mailonsuccess=no
+# Email (all or failure)
+mailon=all
 
 # Run command(s) after backup, for example: run_on_success=/usr/local/bin/success.sh
 # (leave empty if you do not want to run anything)
