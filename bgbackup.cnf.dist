@@ -15,6 +15,9 @@ checkmigrate=no
 # MariaDB host port (optional)
 #hostport=3306
 
+# MySQL socket
+# socket=/var/lib/mysql/mysql.sock
+
 # MariaDB backup username
 backupuser=testuser
 
