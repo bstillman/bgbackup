@@ -483,8 +483,8 @@ backup_history
 
 mdbutil_backup
 
-if [ "$log_status" = "FAILED" ] || [ "$mailonsuccess" = "yes" ] ; then
-    mail_log # Mail results to maillist.
+if [[ "$log_status" = "FAILED" ] && [ "$mailon" = "failure" ]] || [ "$mailon" = "all" ] ; then
+    mail_log # Mail results to maillist. 
 fi
 
 # run commands after backup, eventually
