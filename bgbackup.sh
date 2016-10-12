@@ -349,7 +349,7 @@ function config_check {
         log_info "Archive backup type selected, disabling built-in compression."
         compress="no"
     fi
-    if [[ "$computil" != "gzip" && "$computil" != "pigz" ]]; then
+    if [[ "$computil" != "gzip" && "$computil" != "pigz" ]] && [ "$bktype" = "archive" ]; then
         verbose="yes"
         log_info "Fatal: $computil compression method is unsupported."
         log_status=FAILED
