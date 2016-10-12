@@ -34,6 +34,10 @@ Incremental backups are performed by default. To enable differential backups, se
 
 Details about all backups are emailed to all email addresses listed in MAILLIST if `mailonsuccess` is enabled. Otherwise, only details about failed backups are emailed. 
 
+### Logging
+
+In addition to logging to a log file, output can also be logged to syslog. 
+
 ### Backup History
 
 Details about each backup are logged in the database (`backuphistschema`.backup_history) for easier monitoring in MONyog, Nagios, Cacti, etc. This table is also used by innobackupex to find the backup base directory for incremental and differential backups and for cleanup of old backups.
