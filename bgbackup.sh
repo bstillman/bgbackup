@@ -209,6 +209,78 @@ PRIMARY KEY (uuid)
 EOF
 )
     $mysqlcommand "$createtable" >> "$logfile"
+    log_info "backup history table created"
+}
+
+# Function to check if Percona backup history records exist and need migrated
+function check_migrate {
+    perconacnt=$(mysql -ss -e "SELECT COUNT(a.uuid) FROM PERCONA_SCHEMA.xtrabackup_history a LEFT JOIN mdbutil.mariadb_backup_history b ON a.uuid = b.uuid WHERE b.uuid IS NULL;")
+    if [ "$perconacnt" -gt 0 ];
+    then  
+        log_info "$perconacnt Percona backup history records not migrated. Migrating."
+        migrate
+    fi
+}
+
+# Function to migrate percona backup history records
+function migrate {
+    migratesql=$(cat <<EOF
+INSERT INTO $backuphistschema.mariadb_backup_history (
+  uuid, 
+  hostname, 
+  starttime,
+  endtime, 
+  backupdir, 
+  status, 
+  butype, 
+  compressed, 
+  encrypted, 
+  xtrabackup_version
+  )
+SELECT 
+  uuid,
+  name,
+  start_time,
+  end_time,
+  SUBSTRING_INDEX(SUBSTRING_INDEX(tool_command, ' ', 1), ' ', -1) as backupdirV,
+  CASE
+    WHEN partial = 'N' THEN 'SUCCEEDED'
+    ELSE 'FAILED'
+    END AS statusV,
+  CASE
+    WHEN incremental = 'Y' THEN 'Incremental'
+    WHEN incremental = 'N' THEN 'Full'
+    ELSE null
+    END AS butypeV,
+  compressed,
+  encrypted,
+  concat('MIGRATED FROM PERCONA_SCHEMA - ',tool_version)
+FROM PERCONA_SCHEMA.xtrabackup_history
+EOF
+)
+    $mysqlcommand "$migratesql" >> "$logfile"
+
+    $mysqlcommand "SELECT uuid, backupdir FROM $backuphistschema.mariadb_backup_history WHERE deleted_at IS NULL" | 
+        while read -r uuid backupdir; do
+        if test -d "$backupdir"
+        then
+            mysql -ss -e "UPDATE $backuphistschema.mariadb_backup_history SET deleted_at = '0000-00-00 00:00:00' WHERE uuid = '$uuid' "
+        else
+            mysql -ss -e "UPDATE $backuphistschema.mariadb_backup_history SET deleted_at = NOW() WHERE uuid = '$uuid' "
+        fi
+    done
+
+
+
+    lefttomigratecnt=$(mysql -ss -e "SELECT COUNT(*) FROM mdbutil.mariadb_backup_history WHERE deleted_at IS NULL")
+    if [ "$lefttomigratecnt" -gt 0 ]; 
+    then
+        log_info "Something went wrong, some migrated records not updated correctly."
+        exit 1
+    else
+        log_info "$perconacnt Percona backup history records migrated."
+    fi
+
 }
 
 # Function to write backup history to database
@@ -379,8 +451,12 @@ else
 fi
 
 mysqlcreate
+ 
+create_history_table # Create history table if it doesn't exist
 
-create_history_table
+if [ "$checkmigrate" = yes ] ; then
+    check_migrate # Check if Percona backup history records exist and migrate if needed
+fi
 
 config_check # Check vital configuration parameters
 
