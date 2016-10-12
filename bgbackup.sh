@@ -140,24 +140,24 @@ function backer_upper {
         monyog enable
         sleep 30
     fi
-    backup_prepare
+    if [ "$log_status" = "SUCCEEDED" ] && [ "$bktype" == "prepared-archive" ] ; then
+        backup_prepare
+    fi
     log_info "$butype backup $log_status"
     log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
 }
 
 # Function to prepare backup
 function backup_prepare {
-    if [ "$bktype" == "prepared-archive" ]; then
-        prepcommand="$innobackupex $dirname --apply-log"
-        if [ -n "$databases" ]; then prepcommand=$prepcommand" --export"; fi
-        log_info "Preparing backup."
-        $prepcommand 2>> "$logfile"
-        log_check
-        log_info "Backup prepare complete."
-        log_info "Archiving backup."
-        tar cf "$dirname.tar.gz" -C "$dirname" -I "$computil" . && rm -rf "$dirname"
-        log_info "Archiving complete."
-    fi
+    prepcommand="$innobackupex $dirname --apply-log"
+    if [ -n "$databases" ]; then prepcommand=$prepcommand" --export"; fi
+    log_info "Preparing backup."
+    $prepcommand 2>> "$logfile"
+    log_check
+    log_info "Backup prepare complete."
+    log_info "Archiving backup."
+    tar cf "$dirname.tar.gz" -C "$dirname" -I "$computil" . && rm -rf "$dirname"
+    log_info "Archiving complete."
 }
 
 # Function to build mysql command
@@ -291,7 +291,11 @@ function backup_history {
     versioncommand=$mysqlcommand" \"SELECT @@version\" "
     server_version=$(eval "$versioncommand")
     xtrabackup_version=$(cat "$logfile" | grep "/usr/bin/innobackupex version")
-    backup_size=$(du -sm "$dirname" | awk '{ print $1 }')"M"
+    if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
+        backup_size=$(du -sm "$dirname" | awk '{ print $1 }')"M"
+    elif [ "$bktype" = "archive" ] ; then
+        backup_size=$(du -sm "$arcname" | awk '{ print $1 }')"M"
+    fi
     historyinsert=$(cat <<EOF
 INSERT INTO $backuphistschema.backup_history (uuid, hostname, start_time, end_time, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, backup_size, deleted_at)
 VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$cryptkey", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", "$backup_size", 0)
@@ -337,7 +341,7 @@ function backup_cleanup {
 function mdbutil_backup {
     if [ $log_status = "SUCCEEDED" ]; then
         mysqldumpcreate
-        mdbutildumpfile="$dirname"/"$backuphistschema".backup_history.sql
+        mdbutildumpfile="$backupdir"/"$backuphistschema".backup_history-"$dirdate".sql
         $mysqldumpcommand > "$mdbutildumpfile"
         log_info "Backup history table dumped to $mdbutildumpfile"
     fi
