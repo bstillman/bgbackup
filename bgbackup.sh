@@ -40,9 +40,9 @@ function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
     dirdate=$(date +%Y-%m-%d_%H-%M-%S)
-    alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE DATE(starttime) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
+    alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE DATE(starttime) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
     alreadyfull=$(eval "$alreadyfullcmd")
-    anyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
+    anyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
     anyfull=$(eval "$anyfullcmd")
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
         if ( ( [ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ]) && [ "$alreadyfull" -eq 0 ] ) || [ "$anyfull" -eq 0 ] ; then
@@ -52,13 +52,13 @@ function innocreate {
         else
             if [ "$differential" = yes ] ; then
                 butype=Differential
-                diffbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND butype = 'Full' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
+                diffbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND butype = 'Full' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
                 diffbase=$(eval "$diffbasecmd")
                 dirname="$backupdir/diff-$dirdate"
                 innocommand=$innocommand" $dirname --no-timestamp --incremental --incremental-basedir=$diffbase"
             else
                 butype=Incremental
-                incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
+                incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
                 incbase=$(eval "$incbasecmd")
                 dirname="$backupdir/incr-$dirdate"
                 innocommand=$innocommand" $dirname --no-timestamp --incremental --incremental-basedir=$incbase"
@@ -71,7 +71,7 @@ function innocreate {
             arcname="$backupdir/full-$dirdate.$arctype.gz"
         else
             butype=Incremental
-            incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
+            incbasecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY starttime DESC LIMIT 1\" "
             incbase=$(eval "$incbasecmd")
             innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --incremental --incremental-basedir=$incbase"
             arcname="$backupdir/inc-$dirdate.$arctype.gz"
@@ -177,13 +177,13 @@ function mysqldumpcreate {
     mysqldumpcommand=$mysqldumpcommand" -h $backuphisthost"
     [ ! -z "$backuphistport" ] && innocommand=$innocommand" -P $backuphistport"
     mysqldumpcommand=$mysqldumpcommand" $backuphistschema"
-    mysqldumpcommand=$mysqldumpcommand" mariadb_backup_history"
+    mysqldumpcommand=$mysqldumpcommand" backup_history"
 }
 
-# Function to create mariadb_backup_history table if not exists
+# Function to create backup_history table if not exists
 function create_history_table {
     createtable=$(cat <<EOF
-CREATE TABLE IF NOT EXISTS $backuphistschema.mariadb_backup_history (
+CREATE TABLE IF NOT EXISTS $backuphistschema.backup_history (
 uuid varchar(40) NOT NULL,
 hostname varchar(100) DEFAULT NULL,
 starttime timestamp NULL DEFAULT NULL,
@@ -214,7 +214,7 @@ EOF
 
 # Function to check if Percona backup history records exist and need migrated
 function check_migrate {
-    perconacnt=$(mysql -ss -e "SELECT COUNT(a.uuid) FROM PERCONA_SCHEMA.xtrabackup_history a LEFT JOIN mdbutil.mariadb_backup_history b ON a.uuid = b.uuid WHERE b.uuid IS NULL;")
+    perconacnt=$(mysql -ss -e "SELECT COUNT(a.uuid) FROM PERCONA_SCHEMA.xtrabackup_history a LEFT JOIN mdbutil.backup_history b ON a.uuid = b.uuid WHERE b.uuid IS NULL;")
     if [ "$perconacnt" -gt 0 ];
     then  
         log_info "$perconacnt Percona backup history records not migrated. Migrating."
@@ -225,7 +225,7 @@ function check_migrate {
 # Function to migrate percona backup history records
 function migrate {
     migratesql=$(cat <<EOF
-INSERT INTO $backuphistschema.mariadb_backup_history (
+INSERT INTO $backuphistschema.backup_history (
   uuid, 
   hostname, 
   starttime,
@@ -260,19 +260,19 @@ EOF
 )
     $mysqlcommand "$migratesql" >> "$logfile"
 
-    $mysqlcommand "SELECT uuid, backupdir FROM $backuphistschema.mariadb_backup_history WHERE deleted_at IS NULL" | 
+    $mysqlcommand "SELECT uuid, backupdir FROM $backuphistschema.backup_history WHERE deleted_at IS NULL" | 
         while read -r uuid backupdir; do
         if test -d "$backupdir"
         then
-            mysql -ss -e "UPDATE $backuphistschema.mariadb_backup_history SET deleted_at = '0000-00-00 00:00:00' WHERE uuid = '$uuid' "
+            mysql -ss -e "UPDATE $backuphistschema.backup_history SET deleted_at = '0000-00-00 00:00:00' WHERE uuid = '$uuid' "
         else
-            mysql -ss -e "UPDATE $backuphistschema.mariadb_backup_history SET deleted_at = NOW() WHERE uuid = '$uuid' "
+            mysql -ss -e "UPDATE $backuphistschema.backup_history SET deleted_at = NOW() WHERE uuid = '$uuid' "
         fi
     done
 
 
 
-    lefttomigratecnt=$(mysql -ss -e "SELECT COUNT(*) FROM mdbutil.mariadb_backup_history WHERE deleted_at IS NULL")
+    lefttomigratecnt=$(mysql -ss -e "SELECT COUNT(*) FROM mdbutil.backup_history WHERE deleted_at IS NULL")
     if [ "$lefttomigratecnt" -gt 0 ]; 
     then
         log_info "Something went wrong, some migrated records not updated correctly."
@@ -290,13 +290,13 @@ function backup_history {
     xtrabackup_version=$(cat "$logfile" | grep "/usr/bin/innobackupex version")
     backup_size=$(du -sm "$dirname" | awk '{ print $1 }')"M"
     historyinsert=$(cat <<EOF
-INSERT INTO $backuphistschema.mariadb_backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, backup_size, deleted_at)
+INSERT INTO $backuphistschema.backup_history (uuid, hostname, starttime, endtime, backupdir, logfile, status, butype, bktype, arctype, compressed, encrypted, cryptkey, galera, slave, threads, xtrabackup_version, server_version, backup_size, deleted_at)
 VALUES (UUID(), "$mhost", "$starttime", "$endtime", "$dirname", "$logfile", "$log_status", "$butype", "$bktype", "$arctype", "$compress", "$encrypt", "$cryptkey", "$galera", "$slave", "$threads", "$xtrabackup_version", "$server_version", "$backup_size", 0)
 EOF
 )
     $mysqlcommand "$historyinsert"
     #verify insert
-    verifyinsert=$($mysqlcommand "select count(*) from $backuphistschema.mariadb_backup_history where hostname='$mhost' and endtime='$endtime'")
+    verifyinsert=$($mysqlcommand "select count(*) from $backuphistschema.backup_history where hostname='$mhost' and endtime='$endtime'")
     if [ "$verifyinsert" -eq 1 ]; then
         log_info "Backup history database record inserted successfully."
     else
@@ -312,13 +312,13 @@ EOF
 function backup_cleanup {
     if [ $log_status = "SUCCEEDED" ]; then
         limitoffset=$((keepnum-1))
-        delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+        delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
         delcount=$(eval "$delcountcmd")
         if [ "$delcount" -gt 0 ]; then
-            deletecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.mariadb_backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.mariadb_backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+            deletecmd=$mysqlcommand" \"SELECT backupdir FROM $backuphistschema.backup_history WHERE starttime < (SELECT starttime FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY starttime DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
             eval "$deletecmd" | while read -r deletedir; do
                 log_info "Deleted backup $deletedir"
-                markdeletedcmd=$mysqlcommand" \"UPDATE $backuphistschema.mariadb_backup_history SET deleted_at = NOW() WHERE backupdir = '$deletedir' AND hostname = '$mhost' AND status = 'SUCCEEDED' \" "
+                markdeletedcmd=$mysqlcommand" \"UPDATE $backuphistschema.backup_history SET deleted_at = NOW() WHERE backupdir = '$deletedir' AND hostname = '$mhost' AND status = 'SUCCEEDED' \" "
                 rm -Rf "$deletedir"
                 eval "$markdeletedcmd"
             done
@@ -334,7 +334,7 @@ function backup_cleanup {
 function mdbutil_backup {
     if [ $log_status = "SUCCEEDED" ]; then
         mysqldumpcreate
-        mdbutildumpfile="$dirname"/"$backuphistschema".mariadb_backup_history.sql
+        mdbutildumpfile="$dirname"/"$backuphistschema".backup_history.sql
         $mysqldumpcommand > "$mdbutildumpfile"
         log_info "Backup history table dumped to $mdbutildumpfile"
     fi
