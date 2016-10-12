@@ -28,10 +28,13 @@ function log_check {
 
 # Logging function
 function log_info() {
-    if [ "$verbose" == "no" ]; then
+    if [ "$verbose" == "no" ] ; then
         printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" >>"$logfile"
     else
         printf "%s --> %s\n" "$(date +%Y-%m-%d-%T)" "$*" | tee -a "$logfile"
+    fi
+    if [ "$syslog" = yes ] ; then
+        logger -p local0.notice -t bgbackup "$*"
     fi
 }
 
