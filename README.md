@@ -36,7 +36,7 @@ Details about all backups are emailed to all email addresses listed in MAILLIST 
 
 ### Backup History
 
-Details about each backup are logged in the database (`backuphistschema`.mariadb_backup_history) for easier monitoring in MONyog, Nagios, Cacti, etc. This table is also used by innobackupex to find the backup base directory for incremental and differential backups. 
+Details about each backup are logged in the database (`backuphistschema`.backup_history) for easier monitoring in MONyog, Nagios, Cacti, etc. This table is also used by innobackupex to find the backup base directory for incremental and differential backups and for cleanup of old backups.
 
 ### Encryption
 
@@ -63,6 +63,10 @@ Option to disable MONyog alerts before, and enable after.
 ### Run external commands after backup
 
 Optionally set external commands to be run after successful or failed backup, respectively.
+
+## Important upgrade notes
+
+If a prior version which used innobackupex's --history option was used, there is a checkmigrate option in the config to migrate those records to the new table.
 
 ## Setup instructions
 
@@ -95,23 +99,15 @@ innodb_data_home_dir = /path/to/innodb_data_home_dir
 Lock down permissions on config file(s) (changing the paths as necessary): <br />
 ```
 chown mysql /etc/my.cnf
-chmod 600 /etc/my.cnf
+chmod 400 /etc/my.cnf
 
 chown mysql /etc/my.cnf.d/xtrabackup.cnf
-chmod 600 /etc/my.cnf.d/xtrabackup.cnf
+chmod 400 /etc/my.cnf.d/xtrabackup.cnf
 
 chown mysql /etc/my.cnf.d/backupscript.key
-chmod 600 /etc/my.cnf.d/backupscript.key
+chmod 400 /etc/my.cnf.d/backupscript.key
 
 chown mysql /etc/bgbackup.cnf
-chmod 600 /etc/bgbackup.cnf
+chmod 400 /etc/bgbackup.cnf
 ```
 
-## Important upgrade notes
-
-The mariadb_backup_history table DDL has changed. If upgrading from a previous version of the mdbutil-tracker branch of bgbackup, check the DDL of your existing table. The latest version of this script changes xtrabackup_version to VARCHAR(120), and adds the column backup_size. A future version will add a schema check/fix. 
-
-```
-ALTER TABLE mariadb_backup_history MODIFY xtrabackup_version VARCHAR(120);
-ALTER TABLE mariadb_backup_history ADD backup_size VARCHAR(20) NOT NULL AFTER server_version;
-```
