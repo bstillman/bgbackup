@@ -217,7 +217,7 @@ EOF
 
 # Function to check if Percona backup history records exist and need migrated
 function check_migrate {
-    perconacnt=$($mysqlcommand "SELECT COUNT(a.uuid) FROM PERCONA_SCHEMA.xtrabackup_history a LEFT JOIN mdbutil.backup_history b ON a.uuid = b.uuid WHERE b.uuid IS NULL;")
+    perconacnt=$($mysqlcommand "SELECT COUNT(a.uuid) FROM PERCONA_SCHEMA.xtrabackup_history a LEFT JOIN $backuphistschema.backup_history b ON a.uuid = b.uuid WHERE b.uuid IS NULL;")
     if [ "$perconacnt" -gt 0 ];
     then  
         log_info "$perconacnt Percona backup history records not migrated. Migrating."
@@ -275,7 +275,7 @@ EOF
 
 
 
-    lefttomigratecnt=$($mysqlcommand "SELECT COUNT(*) FROM mdbutil.backup_history WHERE deleted_at IS NULL")
+    lefttomigratecnt=$($mysqlcommand "SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE deleted_at IS NULL")
     if [ "$lefttomigratecnt" -gt 0 ]; 
     then
         log_info "Something went wrong, some migrated records not updated correctly."
@@ -339,7 +339,7 @@ function backup_cleanup {
     fi
 }
 
-# Function to dump mdbutil schema
+# Function to dump $backuphistschema schema
 function mdbutil_backup {
     if [ $log_status = "SUCCEEDED" ]; then
         mysqldumpcreate
@@ -461,7 +461,7 @@ fi
 
 mysqlcreate
 
-check_table=$($mysqlcommand "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='mdbutil' AND table_name='backup_history' ")
+check_table=$($mysqlcommand "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$backuphistschema' AND table_name='backup_history' ")
 if [ "$check_table" -eq 0 ]; then
     create_history_table # Create history table if it doesn't exist
 fi
