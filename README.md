@@ -86,7 +86,7 @@ CREATE DATABASE mdbutil;
 
 Create the backup user (change backupuser to the value of `backupuser`, backuppass to the value of `backuppass`, and backuphistschema to the value of `mdbutil`):  <br />
 ```
-GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'backupuser'@'localhost' IDENTIFIED BY 'backuppass';
+GRANT SUPER, SELECT, RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'backupuser'@'localhost' IDENTIFIED BY 'backuppass';
 GRANT ALL PRIVILEGES ON mdbutil.* TO 'backupuser'@'localhost';
 FLUSH PRIVILEGES; 
 ```
@@ -98,6 +98,7 @@ port = 3306
 socket = /path/to/socket
 datadir = /path/to/datadir
 innodb_data_home_dir = /path/to/innodb_data_home_dir
+inndb_log_home_dir = /path/to/innodb_log_home_dir
 ```
 
 Lock down permissions on config file(s) (changing the paths as necessary): <br />
