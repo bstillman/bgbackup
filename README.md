@@ -98,7 +98,7 @@ port = 3306
 socket = /path/to/socket
 datadir = /path/to/datadir
 innodb_data_home_dir = /path/to/innodb_data_home_dir
-inndb_log_home_dir = /path/to/innodb_log_home_dir
+innodb_log_home_dir = /path/to/innodb_log_home_dir
 ```
 
 Lock down permissions on config file(s) (changing the paths as necessary): <br />
