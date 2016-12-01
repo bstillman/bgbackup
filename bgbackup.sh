@@ -40,6 +40,7 @@ function log_info() {
 
 # Function to extract the xtrabackup-checkpoints file into the corresponding directory
 function prepare-incremental {
+    # directory not existing ? just create it
     if [ ! -d "$dirname" ]; then mkdir -p $dirname fi
     tar xvfz "$arcname" xtrabackup_checkpoints -C "$dirname"
     log_info "xtrabackup_checkpoints restored"
@@ -49,6 +50,7 @@ function prepare-incremental {
 function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
+    #my.cnf in a weird (aka non standard) location, just specify it in the bgbackup.cnf file
     if [ -n "$mycnfdir" ] && [ -f "$mycnfdir"/my.cnf" ]; then innocommand="$innocommand --defaults-file=$mycnfdir/my.cnf" fi
     dirdate=$(date +%Y-%m-%d_%H-%M-%S)
     alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE DATE(start_time) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
@@ -153,7 +155,9 @@ function backer_upper {
     fi
     if [ "$log_status" = "SUCCEEDED" ] && [ "$bktype" == "prepared-archive" ] ; then
         backup_prepare
-    elif [ "$fullbackday" -ne "Always" ]  || [ $bktype -ne "directory" ]; then 
+    elif [ "$log_status" = "SUCCEEDED" ] && ( [ "$fullbackday" -ne "Always" ] || [ $bktype = "archive" ] ); then
+        #for successfull archive backup in case of incremental possibility
+        #prepared archive ave their own preparation step
         prepare-incremental
     fi
     log_info "$butype backup $log_status"
@@ -163,6 +167,7 @@ function backer_upper {
 # Function to prepare backup
 function backup_prepare {
     prepcommand="$innobackupex $dirname --apply-log"
+    #no rollbacking stuff since we may want incrementals, only committed trx
     if [ "$fullbackday" -ne "Always" ]; then prepcomand="$prepcommand --redo-only" fi
     if [ -n "$databases" ]; then prepcommand=$prepcommand" --export"; fi
     log_info "Preparing backup."
@@ -172,8 +177,9 @@ function backup_prepare {
     log_info "Archiving backup."
     tar cf "$dirname.tar.gz" -C "$dirname" -I "$computil" . 
     if [ "$fullbackday" -ne "Always" ]; then 
+        #let's keep the checkpoint for future incremental runs
         find "$dirname" -type f ! -name 'xtrabackup_checkpoints' -delete
-        log info "cleaning directory for incremental"
+        log info "cleaning directory for incremental capability"
     else
         rm -rf "$dirname"
         log_info "removing directory"
@@ -387,6 +393,7 @@ function config_check {
 
 # Debug variables function
 function debugme {
+    #adding the mycnfdirectory location for debugging purposes
     echo "mycnfdir: " "$mycnfdir"
     echo "host: " "$host"
     echo "hostport: " "$hostport"
@@ -432,8 +439,10 @@ function debugme {
 # Begin script
 
 # find and source the config file
+#please no more find errors on stdout
 etccnf=$( find /etc/ -name bgbackup.cnf ) 2>> /dev/null
 scriptdir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+#prime location should be the same directory
 if [ -e "$scriptdir"/bgbackup.cnf ]; then
     source "$scriptdir"/bgbackup.cnf
 elif [ -e "$etccnf" ]; then
