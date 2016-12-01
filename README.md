@@ -10,7 +10,9 @@ The backups are done with xtrabackup/innobackupex. bgbackup supports multiple ba
  
  * Compressed tar archives with gzip and pigz (parallel gzip) support. bgbackup may support multiple compressors in future. 
  
- * Optional "prepared" stage for tar archives where logs are applied before compression.
+ * Optional incremental-ready "prepared" stage for tar archives where only committed transactions are applied before compression.
+ 
+ * Optional fully "prepared" stage for tar archives where logs are applied before compression.
  
  * Optional partial backup on specific database names.
  
