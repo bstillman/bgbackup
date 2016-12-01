@@ -38,10 +38,18 @@ function log_info() {
     fi
 }
 
+# Function to extract the xtrabackup-checkpoints file into the corresponding directory
+function prepare-incremental {
+    if [ ! -d "$dirname" ]; then mkdir -p $dirname fi
+    tar xvfz "$arcname" xtrabackup_checkpoints -C "$dirname"
+    log_info "xtrabackup_checkpoints restored"
+}
+
 # Function to create innobackupex command
 function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
+    if [ -n "$mycnfdir" ] && [ -f "$mycnfdir"/my.cnf" ]; then innocommand="$innocommand --defaults-file=$mycnfdir/my.cnf" fi
     dirdate=$(date +%Y-%m-%d_%H-%M-%S)
     alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE DATE(start_time) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
     alreadyfull=$(eval "$alreadyfullcmd")
@@ -72,12 +80,14 @@ function innocreate {
             butype=Full
             innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp"
             arcname="$backupdir/full-$dirdate.$arctype.gz"
+            dirname="$backupdir/full-$dirdate"
         else
             butype=Incremental
             incbasecmd=$mysqlcommand" \"SELECT bulocation FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY start_time DESC LIMIT 1\" "
             incbase=$(eval "$incbasecmd")
             innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp --incremental --incremental-basedir=$incbase"
-            arcname="$backupdir/inc-$dirdate.$arctype.gz"
+            arcname="$backupdir/incr-$dirdate.$arctype.gz"
+            dirname="$backupdir/incr-$dirdate"
         fi
     fi
     if [ -n "$databases" ] && [ "$bktype" = "prepared-archive" ]; then innocommand=$innocommand" --databases=$databases"; fi
@@ -143,6 +153,8 @@ function backer_upper {
     fi
     if [ "$log_status" = "SUCCEEDED" ] && [ "$bktype" == "prepared-archive" ] ; then
         backup_prepare
+    elif [ "$fullbackday" -ne "Always" ]  || [ $bktype -ne "directory" ]; then 
+        prepare-incremental
     fi
     log_info "$butype backup $log_status"
     log_info "CAUTION: ALWAYS VERIFY YOUR BACKUPS."
@@ -160,7 +172,7 @@ function backup_prepare {
     log_info "Archiving backup."
     tar cf "$dirname.tar.gz" -C "$dirname" -I "$computil" . 
     if [ "$fullbackday" -ne "Always" ]; then 
-        find "$dirname" -type f ! -name 'xtrabackup-checkpoints' -delete
+        find "$dirname" -type f ! -name 'xtrabackup_checkpoints' -delete
         log info "cleaning directory for incremental"
     else
         rm -rf "$dirname"
