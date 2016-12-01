@@ -151,13 +151,21 @@ function backer_upper {
 # Function to prepare backup
 function backup_prepare {
     prepcommand="$innobackupex $dirname --apply-log"
+    if [ "$fullbackday" -ne "Always" ]; then prepcomand="$prepcommand --redo-only" fi
     if [ -n "$databases" ]; then prepcommand=$prepcommand" --export"; fi
     log_info "Preparing backup."
     $prepcommand 2>> "$logfile"
     log_check
     log_info "Backup prepare complete."
     log_info "Archiving backup."
-    tar cf "$dirname.tar.gz" -C "$dirname" -I "$computil" . && rm -rf "$dirname"
+    tar cf "$dirname.tar.gz" -C "$dirname" -I "$computil" . 
+    if [ "$fullbackday" -ne "Always" ]; then 
+        find "$dirname" -type f ! -name 'xtrabackup-checkpoints' -delete
+        log info "cleaning directory for incremental"
+    else
+        rm -rf "$dirname"
+        log_info "removing directory"
+    fi
     log_info "Archiving complete."
 }
 
@@ -367,6 +375,7 @@ function config_check {
 
 # Debug variables function
 function debugme {
+    echo "mycnfdir: " "$mycnfdir"
     echo "host: " "$host"
     echo "hostport: " "$hostport"
     echo "backupuser: " "$backupuser"
@@ -411,12 +420,12 @@ function debugme {
 # Begin script
 
 # find and source the config file
-etccnf=$( find /etc -name bgbackup.cnf )
+etccnf=$( find /etc/ -name bbackup.cnf ) 2>> /dev/null
 scriptdir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-if [ -e "$etccnf" ]; then
-    source "$etccnf"
-elif [ -e "$scriptdir"/bgbackup.cnf ]; then
+if [ -e "$scriptdir"/bgbackup.cnf ]; then
     source "$scriptdir"/bgbackup.cnf
+elif [ -e "$etccnf" ]; then
+    source "$etccnf"
 else
     log_info "Error: bgbackup.cnf configuration file not found"
     log_info "The configuration file must exist somewhere in /etc or"
