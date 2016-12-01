@@ -9,6 +9,9 @@
 # as today's date.
 checkmigrate=no
 
+# MariaDB config file location (optional)
+#mycnfdir=
+
 # MariaDB host (optional)
 #host=127.0.0.1
 
