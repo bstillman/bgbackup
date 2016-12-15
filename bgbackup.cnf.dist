@@ -39,10 +39,10 @@ backuphistpass=testpass
 # MariaDB schema for backup history
 backuphistschema=mdbutil
 
-# If server monitored by MONyog, should we disable alerts?
+# If server is monitored by MONyog, should we disable alerts?
 monyog=no
 
-# The name of the server as setup in MONyog
+# The name of the server being backed up as setup in MONyog
 monyogserver=
 
 # MONyog username
@@ -64,7 +64,7 @@ fullbackday=Everyday
 differential=no
 
 # Number of full backups to keep
-keepnum=2
+keepnum=3
 
 # Full path to backup directory root
 backupdir=/backups
@@ -103,7 +103,9 @@ compress=yes
 # For standalone directories, qpress is always used
 computil=gzip
 
-# Include Galera info?
+# Include Galera info and enable wsrep_desync to avoid flow control during backup.
+# When the backup is finished, wait for wsrep_local_recv_queue to drop to 0 before
+# disabling wsrep_desync. 
 galera=no
 
 # Include slave info?
