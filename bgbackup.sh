@@ -43,7 +43,7 @@ function innocreate {
     mhost=$(hostname)
     innocommand="$innobackupex"
     dirdate=$(date +%Y-%m-%d_%H-%M-%S)
-    alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE DATE(start_time) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
+    alreadyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE DATE(end_time) = CURDATE() AND butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
     alreadyfull=$(eval "$alreadyfullcmd")
     anyfullcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE butype = 'Full' AND status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 \" "
     anyfull=$(eval "$anyfullcmd")
@@ -322,10 +322,10 @@ EOF
 function backup_cleanup {
     if [ $log_status = "SUCCEEDED" ]; then
         limitoffset=$((keepnum-1))
-        delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE start_time < (SELECT start_time FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY start_time DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+        delcountcmd=$mysqlcommand" \"SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE end_time < (SELECT end_time FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY end_time DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
         delcount=$(eval "$delcountcmd")
         if [ "$delcount" -gt 0 ]; then
-            deletecmd=$mysqlcommand" \"SELECT bulocation FROM $backuphistschema.backup_history WHERE start_time < (SELECT start_time FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY start_time DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
+            deletecmd=$mysqlcommand" \"SELECT bulocation FROM $backuphistschema.backup_history WHERE end_time < (SELECT end_time FROM $backuphistschema.backup_history WHERE butype = 'Full' ORDER BY end_time DESC LIMIT $limitoffset,1) AND hostname = '$mhost' AND status = 'SUCCEEDED' AND deleted_at = 0\" "
             eval "$deletecmd" | while read -r todelete; do
                 log_info "Deleted backup $todelete"
                 markdeletedcmd=$mysqlcommand" \"UPDATE $backuphistschema.backup_history SET deleted_at = NOW() WHERE bulocation = '$todelete' AND hostname = '$mhost' AND status = 'SUCCEEDED' \" "
