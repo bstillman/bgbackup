@@ -91,6 +91,12 @@ GRANT ALL PRIVILEGES ON mdbutil.* TO 'backupuser'@'localhost';
 FLUSH PRIVILEGES; 
 ```
 
+If backing up Galera, SUPER is also needed to enable/disable wsrep_desync. 
+
+```
+GRANT SUPER ON *.* TO 'backupuser'@'localhost';
+```
+
 Add this info to bottom of /etc/my.cnf (MySQL) or new /etc/my.cnf.d/xtrabackup.cnf (MariaDB) (change the paths to your paths): <br />
 ```
 [xtrabackup]
