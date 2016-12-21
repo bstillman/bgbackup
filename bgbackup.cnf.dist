@@ -66,6 +66,9 @@ differential=no
 # Number of full backups to keep
 keepnum=3
 
+# Number of backup table backups to keep. If not set, won't clean up. 
+# keepbkuptblnum=
+
 # Full path to backup directory root
 backupdir=/backups
 
