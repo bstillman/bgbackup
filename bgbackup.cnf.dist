@@ -9,6 +9,10 @@
 # as today's date.
 checkmigrate=no
 
+
+# MariaDB config file location if not in default location(s) (optional)
+#mycnfdir=
+
 # MariaDB host (optional)
 #host=127.0.0.1
 
@@ -66,7 +70,7 @@ differential=no
 # Number of full backups to keep
 keepnum=3
 
-# Number of backup table backups to keep. If not set, won't clean up. 
+# Number of backup table backups to keep. If not set, won't clean up. (optional)
 # keepbkuptblnum=
 
 # Full path to backup directory root
