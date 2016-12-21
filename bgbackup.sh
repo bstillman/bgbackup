@@ -350,6 +350,19 @@ function mdbutil_backup {
     fi
 }
 
+# Function to cleanup mdbutil backups
+function mdbutil_backup_cleanup {
+    if [ $log_status = "SUCCEEDED" ]; then
+        delbkuptbllist=$(ls -tp "$backupdir" | grep "$backuphistschema".backup_history | tail -n +$((keepbkuptblnum+=1)))
+        for bkuptbltodelete in $delbkuptbllist; do
+            rm -f "$backupdir"/"$bkuptbltodelete"
+            log_info "Deleted backup history backup $bkuptbltodelete"
+        done
+    else
+        log_info "Backup failed. No backup history backups deleted at this time."
+    fi
+}
+
 # Function to check config parameters
 function config_check {
     if [[ "$bktype" = "archive" || "$bktype" = "prepared-archive" ]] && [ "$compress" = "yes" ] ; then
@@ -482,6 +495,8 @@ endtime=$(date +"%Y-%m-%d %H:%M:%S")
 backup_history
 
 mdbutil_backup
+
+mdbutil_backup_cleanup
 
 if ( [ "$log_status" = "FAILED" ] && [ "$mailon" = "failure" ] ) || [ "$mailon" = "all" ] ; then
     mail_log # Mail results to maillist. 
