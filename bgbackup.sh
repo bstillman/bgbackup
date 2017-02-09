@@ -431,13 +431,27 @@ if [ -e "$etccnf" ]; then
 elif [ -e "$scriptdir"/bgbackup.cnf ]; then
     source "$scriptdir"/bgbackup.cnf
 else
-    log_info "Error: bgbackup.cnf configuration file not found"
-    log_info "The configuration file must exist somewhere in /etc or"
-    log_info "in the same directory where the script is located"
-    log_status=FAILED
-    mail_log
+    echo "Error: bgbackup.cnf configuration file not found"
+    echo "The configuration file must exist somewhere in /etc or"
+    echo "in the same directory where the script is located"
     exit 1
 fi
+
+if [ ! -d "$logpath" ]; then
+    echo "Error: Log dir $logpath not found"
+    exit 1
+fi
+
+if [ ! -w "$logpath" ]; then
+    echo "Error: Log dir $logpath not writeable"
+    exit 1
+fi
+
+# Set some specific variables
+starttime=$(date +"%Y-%m-%d %H:%M:%S")
+mdate=$(date +%m/%d/%y)    # Date for mail subject. Not in function so set at script start time, not when backup is finished.
+logfile=$logpath/bgbackup_$(date +%Y-%m-%d-%T).log    # logfile
+
 
 # verify the backup directory exists
 if [ ! -d "$backupdir" ]
@@ -458,10 +472,6 @@ if [ ! -w "$backupdir" ]; then
     exit 1
 fi
 
-# Set some specific variables
-starttime=$(date +"%Y-%m-%d %H:%M:%S")
-mdate=$(date +%m/%d/%y)    # Date for mail subject. Not in function so set at script start time, not when backup is finished.
-logfile=$logpath/bgbackup_$(date +%Y-%m-%d-%T).log    # logfile
 
 # Check for xtrabackup
 if command -v innobackupex >/dev/null; then
