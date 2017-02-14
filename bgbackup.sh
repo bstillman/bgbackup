@@ -91,6 +91,7 @@ function innocreate {
     if [ "$parallel" = yes ] ; then innocommand=$innocommand" --parallel=$threads" ; fi
     if [ "$compress" = yes ] ; then innocommand=$innocommand" --compress --compress-threads=$threads" ; fi
     if [ "$encrypt" = yes ] ; then innocommand=$innocommand" --encrypt=AES256 --encrypt-key-file=$cryptkey" ; fi
+    if [ "$nolock" = yes ] ; then innocommand=$innocommand" --no-lock" ; fi
 }
 
 # Function to decrypt xtrabackup_checkpoints
@@ -400,6 +401,7 @@ function debugme {
     echo "parallel: " "$parallel"
     echo "encrypt: " "$encrypt"
     echo "cryptkey: " "$cryptkey"
+    echo "nolock: " "$nolock"
     echo "compress: " "$compress"
     echo "galera: " "$galera"
     echo "slave: " "$slave"
