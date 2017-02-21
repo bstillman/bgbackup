@@ -12,6 +12,17 @@
 
 # Functions
 
+# Handle control-c
+function sigint {
+  echo "SIGINT detected. Exiting"
+  if [ "$galera" = yes ] ; then
+      log_info "Disabling WSREP desync on exit"
+      mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=OFF;"
+  fi
+  # 130 is the standard exit code for SIGINT
+  exit 130
+}
+
 # Mail function
 function mail_log {
     mail -s "$mailsubpre $HOSTNAME Backup $log_status $mdate" "$maillist" < "$logfile"
@@ -173,7 +184,7 @@ function mysqlcreate {
     mysqlcommand=$mysqlcommand" -Bse "
 }
 
-# Function to build mysqldump command 
+# Function to build mysqldump command
 function mysqldumpcreate {
     mysqldump=$(command -v mysqldump)
     mysqldumpcommand="$mysqldump"
@@ -221,7 +232,7 @@ EOF
 function check_migrate {
     perconacnt=$($mysqlcommand "SELECT COUNT(a.uuid) FROM PERCONA_SCHEMA.xtrabackup_history a LEFT JOIN $backuphistschema.backup_history b ON a.uuid = b.uuid WHERE b.uuid IS NULL;")
     if [ "$perconacnt" -gt 0 ];
-    then  
+    then
         log_info "$perconacnt Percona backup history records not migrated. Migrating."
         migrate
     fi
@@ -231,18 +242,18 @@ function check_migrate {
 function migrate {
     migratesql=$(cat <<EOF
 INSERT INTO $backuphistschema.backup_history (
-  uuid, 
-  hostname, 
+  uuid,
+  hostname,
   start_time,
-  end_time, 
-  bulocation, 
-  status, 
-  butype, 
-  compressed, 
-  encrypted, 
+  end_time,
+  bulocation,
+  status,
+  butype,
+  compressed,
+  encrypted,
   xtrabackup_version
   )
-SELECT 
+SELECT
   uuid,
   name,
   start_time,
@@ -265,7 +276,7 @@ EOF
 )
     $mysqlcommand "$migratesql" >> "$logfile"
 
-    $mysqlcommand "SELECT uuid, bulocation FROM $backuphistschema.backup_history WHERE deleted_at IS NULL" | 
+    $mysqlcommand "SELECT uuid, bulocation FROM $backuphistschema.backup_history WHERE deleted_at IS NULL" |
         while read -r uuid bulocation; do
         if test -d "$bulocation"
         then
@@ -278,7 +289,7 @@ EOF
 
 
     lefttomigratecnt=$($mysqlcommand "SELECT COUNT(*) FROM $backuphistschema.backup_history WHERE deleted_at IS NULL")
-    if [ "$lefttomigratecnt" -gt 0 ]; 
+    if [ "$lefttomigratecnt" -gt 0 ];
     then
         log_info "Something went wrong, some migrated records not updated correctly."
         exit 1
@@ -425,6 +436,9 @@ function debugme {
 ############################################
 # Begin script
 
+# we trap control-c
+trap sigint INT
+
 # find and source the config file
 etccnf=$( find /etc -name bgbackup.cnf )
 scriptdir=$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -466,7 +480,7 @@ then
 fi
 
 # verify user running script has permissions needed to write to backup directory
-if [ ! -w "$backupdir" ]; then 
+if [ ! -w "$backupdir" ]; then
     log_info "Error: $backupdir directory is not writable."
     log_info "Verify the user running this script has write access to the configured backup directory."
     log_status=FAILED
@@ -511,7 +525,7 @@ mdbutil_backup
 mdbutil_backup_cleanup
 
 if ( [ "$log_status" = "FAILED" ] && [ "$mailon" = "failure" ] ) || [ "$mailon" = "all" ] ; then
-    mail_log # Mail results to maillist. 
+    mail_log # Mail results to maillist.
 fi
 
 # run commands after backup, eventually
