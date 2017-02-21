@@ -106,6 +106,12 @@ compress=yes
 # For standalone directories, qpress is always used
 computil=gzip
 
+
+# By default, xtrabackup will lock all tables to create a consistent backup of non-transactional
+# tables. Enabled nolock to disable this behaviour.
+# WARNING: Only disable locking if you do not have or do not care about your non-transactional tables.
+nolock=no
+
 # Include Galera info and enable wsrep_desync to avoid flow control during backup.
 # When the backup is finished, wait for wsrep_local_recv_queue to drop to 0 before
 # disabling wsrep_desync. 
