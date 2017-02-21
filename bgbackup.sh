@@ -180,7 +180,7 @@ function mysqlcreate {
     mysqlcommand=$mysqlcommand" -u $backuphistuser"
     mysqlcommand=$mysqlcommand" -p$backuphistpass"
     mysqlcommand=$mysqlcommand" -h $backuphisthost"
-    [ ! -z "$backuphistport" ] && innocommand=$innocommand" -P $backuphistport"
+    [ -n "$backuphistport" ] && mysqlcommand=$mysqlcommand" -P $backuphistport"
     mysqlcommand=$mysqlcommand" -Bse "
 }
 
@@ -191,7 +191,7 @@ function mysqldumpcreate {
     mysqldumpcommand=$mysqldumpcommand" -u $backuphistuser"
     mysqldumpcommand=$mysqldumpcommand" -p$backuphistpass"
     mysqldumpcommand=$mysqldumpcommand" -h $backuphisthost"
-    [ ! -z "$backuphistport" ] && innocommand=$innocommand" -P $backuphistport"
+    [ -n "$backuphistport" ] && mysqldumpcommand=$myslqdumpcommand" -P $backuphistport"
     mysqldumpcommand=$mysqldumpcommand" $backuphistschema"
     mysqldumpcommand=$mysqldumpcommand" backup_history"
 }
