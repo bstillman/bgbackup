@@ -510,6 +510,15 @@ if [ "$?" -eq 1 ]; then
   exit 1
 fi
 
+# Check that the database exists before continuing further
+$mysqlcommand "USE $backuphistschema"
+if [ "$?" -eq 1 ]; then
+  log_info "Error: The schema containing the history '$backuphistschema' does not exist. Please check your configuration and try again."
+  log_status=FAILED
+  mail_log
+  exit 1
+fi
+
 check_table=$($mysqlcommand "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$backuphistschema' AND table_name='backup_history' ")
 if [ "$check_table" -eq 0 ]; then
     create_history_table # Create history table if it doesn't exist
