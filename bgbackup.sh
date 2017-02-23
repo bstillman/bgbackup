@@ -504,7 +504,7 @@ fi
 mysqlcreate
 
 # Check that mysql client can connect
-$mysqlcommand "SELECT 1 FROM DUAL"
+$mysqlcommand "SELECT 1 FROM DUAL" 1>/dev/null
 if [ "$?" -eq 1 ]; then
   log_info "Error: mysql client is unable to connect with the information you have provided. Please check your configuration and try again."
   log_status=FAILED
