@@ -103,6 +103,7 @@ function innocreate {
     if [ "$compress" = yes ] ; then innocommand=$innocommand" --compress --compress-threads=$threads" ; fi
     if [ "$encrypt" = yes ] ; then innocommand=$innocommand" --encrypt=AES256 --encrypt-key-file=$cryptkey" ; fi
     if [ "$nolock" = yes ] ; then innocommand=$innocommand" --no-lock" ; fi
+    if [ "$nolock" = yes ] && [ "$slave" = yes ] ; then innocommand=$innocommand" --safe-slave-backup" ; fi
 }
 
 # Function to decrypt xtrabackup_checkpoints
@@ -128,6 +129,7 @@ function backer_upper {
         mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
     fi
     log_info "Beginning ${butype} Backup"
+    log_info "Executing Innobackupex comamnd: $innocommand"
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
         $innocommand 2>> "$logfile"
         log_check
