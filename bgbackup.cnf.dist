@@ -118,6 +118,8 @@ nolock=no
 galera=no
 
 # Include slave info?
+# WARNING: If slave info is included and nolock is enabled, bgbackup will enable safe-slave-backup. 
+# (safe slave backups will temporarily pause replication. Please inspect the documentation if your application cannot handle stale reads.)
 slave=no
 
 # Comma separated list of email address to be notified.
