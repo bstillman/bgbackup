@@ -79,7 +79,7 @@ function innocreate {
             fi
         fi
     elif [ "$bktype" = "archive" ] ; then
-        if [ "$(date +%A)" = "$fullbackday" ] ; then
+        if [ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ] ; then
             butype=Full
             innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp"
             arcname="$backupdir/full-$dirdate.$arctype.gz"
