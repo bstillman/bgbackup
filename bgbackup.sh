@@ -79,7 +79,7 @@ function innocreate {
             fi
         fi
     elif [ "$bktype" = "archive" ] ; then
-        if [ "$(date +%A)" = "$fullbackday" ] ; then
+        if [ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ] ; then
             butype=Full
             innocommand=$innocommand" /tmp --stream=$arctype --no-timestamp"
             arcname="$backupdir/full-$dirdate.$arctype.gz"
@@ -129,7 +129,7 @@ function backer_upper {
         mysql -u "$backupuser" -p"$backuppass" -e "SET GLOBAL wsrep_desync=ON;"
     fi
     log_info "Beginning ${butype} Backup"
-    log_info "Executing xtrabackup command: $innocommand"
+    log_info "Executing xtrabackup command: $(echo "$innocommand" | sed -e 's/password=.* /password=XXX /g')"
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
         $innocommand 2>> "$logfile"
         log_check
