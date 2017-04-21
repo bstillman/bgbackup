@@ -72,6 +72,15 @@ If a prior version which used innobackupex's --history option was used, there is
 
 ## Setup instructions
 
+Install xtrabackup, qpress, mailx as needed: <br />
+```
+Yum example:
+yum install http://www.percona.com/downloads/percona-release/redhat/0.1-4/percona-release-0.1-4.noarch.rpm
+yum install percona-xtrabackup
+yum install mailx
+yum install qpress
+```
+
 Use the following to create the encryption key file: <br />
 ```
 echo -n $(openssl rand -base64 24) > /etc/my.cnf.d/backupscript.key
