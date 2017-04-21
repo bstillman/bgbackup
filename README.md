@@ -20,8 +20,6 @@ The backups are done with xtrabackup/innobackupex. bgbackup supports multiple ba
 
 Set `fullbackday` to the day you would like full backups taken. The first backup of `fullbackday` will be full backups. All subsequent backups (including backups taken later the same day) will be incremental or differential based on the setting `differential`. 
 
-To disable incremental/differential backups and have every run be a full backup, set `fullbackday` to `Always`
-
 ### Incremental or Differential
 
 Incremental backups contain only the changed data since the last successful full or incremental backup. While the size of each incremental is smaller than a differential, the time to restore is longer. Each incremental needs to be applied in reverse order to the previous incremental until reaching the full backup. 
