@@ -536,6 +536,19 @@ else
     exit 1
 fi
 
+# Check that we are not already running
+
+lockfile=/tmp/bgbackup.lock
+if [ -f $lockfile ]
+then
+    log_info "Another instance of bgbackup is already running. Exiting."
+    log_status=FAILED
+    mail_log
+    exit 1
+fi
+trap 'rm -f $lockfile' 0
+touch $lockfile
+
 mysqlcreate
 
 # Check that mysql client can connect
