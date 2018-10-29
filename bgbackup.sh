@@ -62,20 +62,20 @@ function innocreate {
         if ( ( [ "$(date +%A)" = "$fullbackday" ] || [ "$fullbackday" = "Everyday" ]) && [ "$alreadyfull" -eq 0 ] ) || [ "$anyfull" -eq 0 ] ; then
             butype=Full
             dirname="$backupdir/full-$dirdate"
-            innocommand=$innocommand" $dirname --no-timestamp"
+            innocommand=$innocommand" --backup --target-dir $dirname --no-timestamp"
         else
             if [ "$differential" = yes ] ; then
                 butype=Differential
                 diffbasecmd=$mysqlcommand" \"SELECT bulocation FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND butype = 'Full' AND deleted_at = 0 ORDER BY start_time DESC LIMIT 1\" "
                 diffbase=$(eval "$diffbasecmd")
                 dirname="$backupdir/diff-$dirdate"
-                innocommand=$innocommand" $dirname --no-timestamp --incremental --incremental-basedir=$diffbase"
+                innocommand=$innocommand" --backup --target-dir $dirname --no-timestamp --incremental --incremental-basedir=$diffbase"
             else
                 butype=Incremental
                 incbasecmd=$mysqlcommand" \"SELECT bulocation FROM $backuphistschema.backup_history WHERE status = 'SUCCEEDED' AND hostname = '$mhost' AND deleted_at = 0 ORDER BY start_time DESC LIMIT 1\" "
                 incbase=$(eval "$incbasecmd")
                 dirname="$backupdir/incr-$dirdate"
-                innocommand=$innocommand" $dirname --no-timestamp --incremental --incremental-basedir=$incbase"
+                innocommand=$innocommand" --backup --target-dir $dirname --no-timestamp --incremental --incremental-basedir=$incbase"
             fi
         fi
     elif [ "$bktype" = "archive" ] ; then
@@ -339,7 +339,7 @@ EOF
 function backup_history {
     versioncommand=$mysqlcommand" \"SELECT @@version\" "
     server_version=$(eval "$versioncommand")
-    xtrabackup_version=$(cat "$logfile" | grep "/usr/bin/innobackupex version")
+    xtrabackup_version=$(($innobackupex -version) 2>&1)
     if [ "$bktype" = "directory" ] || [ "$bktype" = "prepared-archive" ]; then
         backup_size=$(du -sm "$dirname" | awk '{ print $1 }')"M"
         bulocation="$dirname"
@@ -390,7 +390,7 @@ function backup_cleanup {
 
 # Function to dump $backuphistschema schema
 function mdbutil_backup {
-    if [ $log_status = "SUCCEEDED" ]; then
+    if [ $backuphistschema != "" ] &&  [ $log_status = "SUCCEEDED" ]; then
         mysqldumpcreate
         mdbutildumpfile="$backupdir"/"$backuphistschema".backup_history-"$dirdate".sql
         $mysqldumpcommand > "$mdbutildumpfile"
@@ -526,11 +526,15 @@ if [ ! -w "$backupdir" ]; then
 fi
 
 
-# Check for xtrabackup
-if command -v innobackupex >/dev/null; then
+# Check for mariabackup or xtrabackup
+if [ "$backuptool" == "1" ] && command -v mariabackup >/dev/null; then
+    innobackupex=$(command -v mariabackup)
+    compress="no"
+elif [ "$backuptool" == "2" ] && command -v innobackupex >/dev/null; then
     innobackupex=$(command -v innobackupex)
 else
-    log_info "xtrabackup/innobackupex does not appear to be installed. Please install and try again."
+    echo "The backuptool does not appear to be installed. Please check that a valid backuptool is chosen in bgbackup.cnf and that it's installed."
+    log_info "The backuptool does not appear to be installed. Please check that a valid backuptool is chosen in bgbackup.cnf and that it's installed."
     log_status=FAILED
     mail_log
     exit 1
@@ -563,10 +567,13 @@ fi
 # Check that the database exists before continuing further
 $mysqlcommand "USE $backuphistschema"
 if [ "$?" -eq 1 ]; then
-  log_info "Error: The schema containing the history '$backuphistschema' does not exist. Please check your configuration and try again."
-  log_status=FAILED
-  mail_log
-  exit 1
+    echo "Error: The database '$backuphistschema' containing the history does not exist. Please check your configuration and try again."
+    log_info "Error: The database '$backuphistschema' containing the history does not exist. Please check your configuration and try again."
+    log_status=FAILED
+    mail_log
+    exit 1
+else
+    $mysqlcommand "USE $backuphistschema"
 fi
 
 check_table=$($mysqlcommand "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$backuphistschema' AND table_name='backup_history' ")
