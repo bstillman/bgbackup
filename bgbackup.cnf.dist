@@ -2,6 +2,11 @@
 
 # bgbackup configuration file
 
+# Which backup utility is being used, MariaBackup or Xtrabackup?
+# MariaDB Backup = 1
+# XtraBackup = 2
+backuptool=2
+
 # Check for Percona backup history records to migrate?
 # If yes, be warned that backups which meet the current
 # delete threshold will be deleted. Backups which have
