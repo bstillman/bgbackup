@@ -93,7 +93,7 @@ CREATE DATABASE mdbutil;
 
 Create the backup user (change backupuser to the value of `backupuser`, backuppass to the value of `backuppass`, and backuphistschema to the value of `mdbutil`):  <br />
 ```
-GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'backupuser'@'localhost' IDENTIFIED BY 'backuppass';
+GRANT RELOAD, LOCK TABLES, PROCESS, REPLICATION CLIENT ON *.* TO 'backupuser'@'localhost' IDENTIFIED BY 'backuppass';
 GRANT ALL PRIVILEGES ON mdbutil.* TO 'backupuser'@'localhost';
 FLUSH PRIVILEGES; 
 ```
