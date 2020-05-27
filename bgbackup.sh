@@ -147,7 +147,7 @@ function innocreate {
     if [ "$encrypt" = yes ] ; then innocommand=$innocommand" --encrypt=AES256 --encrypt-key-file=$cryptkey" ; fi
     if [ "$nolock" = yes ] ; then innocommand=$innocommand" --no-lock" ; fi
     if [ "$nolock" = yes ] && [ "$slave" = yes ] ; then innocommand=$innocommand" --safe-slave-backup" ; fi
-    if [ "$rocksdb" = no ] ; then innocommand=$innocommand" --skip-rocksdb-backup" ; fi
+    if [ "$rocksdb" = no ] && ["$backuptool" = 2 ]; then innocommand=$innocommand" --skip-rocksdb-backup" ; fi
 }
 
 # Function to decrypt xtrabackup_checkpoints
@@ -167,6 +167,10 @@ function backer_upper {
         log_info "Disabling MONyog alerts"
         monyog disable
         sleep 30
+    fi
+    if [ "$openfilelimit" -gt 0 ]; then 
+        echo "Increasing open files limit to $openfilelimit"
+        ulimit -n "$openfilelimit"
     fi
     if [ "$galera" = yes ] ; then
         log_info "Enabling WSREP desync."

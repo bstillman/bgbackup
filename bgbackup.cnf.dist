@@ -9,6 +9,11 @@
 # as today's date.
 checkmigrate=no
 
+# Some times the backuptool requires a high amount of open files.
+# Use this parameter to set the open file limit to a certain value, 
+# we recommend 20.000 to make sure there is enough.
+openfilelimit=0
+
 # MariaDB host (optional)
 #host=127.0.0.1
 
