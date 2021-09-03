@@ -245,7 +245,7 @@ function mysqldumpcreate {
     mysqldumpcommand=$mysqldumpcommand" -u $backuphistuser"
     mysqldumpcommand=$mysqldumpcommand" -p$backuphistpass"
     mysqldumpcommand=$mysqldumpcommand" -h $backuphisthost"
-    [ -n "$backuphistport" ] && mysqldumpcommand=$myslqdumpcommand" -P $backuphistport"
+    [ -n "$backuphistport" ] && mysqldumpcommand=$mysqldumpcommand" -P $backuphistport"
     mysqldumpcommand=$mysqldumpcommand" $backuphistschema"
     mysqldumpcommand=$mysqldumpcommand" backup_history"
 }
