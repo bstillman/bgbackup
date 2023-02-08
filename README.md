@@ -4,15 +4,17 @@ bgbackup is a MySQL ecosystem wrapper script for setting up a daily database bac
 
 bgbackup works with MariaDB, Percona, MySQL, Galera Cluster, WebscaleSQL, etc.
 
-The backups are done with xtrabackup/innobackupex. bgbackup supports multiple backup types, such as:
+The backups are done with xtrabackup/innobackupex or mariabackup. bgbackup supports multiple backup types, such as:
 
- * Standalone directories, with optional compression (qpress) and encryption (xbcrypt).
+ * Standalone directories, with optional compression (qpress) and encryption (xbcrypt - xtrabackup/innobackupex only).
  
  * Compressed tar archives with gzip and pigz (parallel gzip) support. bgbackup may support multiple compressors in future. 
  
  * Optional "prepared" stage for tar archives where logs are applied before compression.
  
  * Optional partial backup on specific database names.
+
+> With MariaDB v10.2.19 or higher, MariaDB backup may be preferred over xtrabackup/innobackupex due to compatibility issues: https://mariadb.com/kb/en/library/percona-xtrabackup/
  
 ## Main features
  
@@ -72,6 +74,8 @@ If a prior version which used innobackupex's --history option was used, there is
 
 ## Setup instructions
 
+**Using xtrabackup/innobackupex**
+
 Install xtrabackup, qpress, mailx as needed: <br />
 ```
 Yum example:
@@ -80,6 +84,25 @@ yum install percona-xtrabackup
 yum install mailx
 yum install qpress
 ```
+
+**Using mariabackup**
+
+Install mariabackup, qpress, mailx as needed: <br />
+```
+Yum example:
+echo <<EOF > /etc/yum.repos.d/mariadb.repo
+[mariadb]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.2/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+EOF
+yum install MariaDB-backup
+yum install mailx
+yum install qpress
+```
+
+**Continue setup**
 
 Use the following to create the encryption key file: <br />
 ```
@@ -91,7 +114,7 @@ Create the MDB Utilities schema/database (replace backuphistschema with the valu
 CREATE DATABASE mdbutil;
 ```
 
-Create the backup user (change backupuser to the value of `backupuser`, backuppass to the value of `backuppass`, and backuphistschema to the value of `mdbutil`):  <br />
+Create the backup user (change backupuser to the value of `backupuser`, backuppass to the value of `backuppass`, and backuphistschema to the value of `mdbutil`): <br />
 ```
 GRANT RELOAD, LOCK TABLES, PROCESS, REPLICATION CLIENT ON *.* TO 'backupuser'@'localhost' IDENTIFIED BY 'backuppass';
 GRANT ALL PRIVILEGES ON mdbutil.* TO 'backupuser'@'localhost';
@@ -112,6 +135,8 @@ socket = /path/to/socket
 datadir = /path/to/datadir
 innodb_data_home_dir = /path/to/innodb_data_home_dir
 ```
+
+> Change to `[mariabackup]` when using mariabackup.
 
 Lock down permissions on config file(s) (changing the paths as necessary): <br />
 ```
