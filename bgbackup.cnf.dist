@@ -2,17 +2,17 @@
 
 # bgbackup configuration file
 
-# Which backup utility is being used, MariaBackup or Xtrabackup?
-# MariaDB Backup = 1
-# XtraBackup = 2
-backuptool=2
-
 # Check for Percona backup history records to migrate?
 # If yes, be warned that backups which meet the current
 # delete threshold will be deleted. Backups which have
 # already been deleted will be marked with deleted_at
 # as today's date.
 checkmigrate=no
+
+# Some times the backuptool requires a high amount of open files.
+# Use this parameter to set the open file limit to a certain value, 
+# we recommend 20.000 to make sure there is enough.
+openfilelimit=0
 
 # MariaDB host (optional)
 #host=127.0.0.1
@@ -111,11 +111,14 @@ compress=yes
 # For standalone directories, qpress is always used
 computil=gzip
 
-
 # By default, xtrabackup will lock all tables to create a consistent backup of non-transactional
 # tables. Enabled nolock to disable this behaviour.
 # WARNING: Only disable locking if you do not have or do not care about your non-transactional tables.
 nolock=no
+
+# By default, xtrabackup will backup RocksDB tables in the phase after InnoDB. 
+# If you don't use RocksDB you can disable this to speed up the backup process.
+rocksdb=yes
 
 # Include Galera info and enable wsrep_desync to avoid flow control during backup.
 # When the backup is finished, wait for wsrep_local_recv_queue to drop to 0 before
